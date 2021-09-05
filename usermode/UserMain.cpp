@@ -11,7 +11,9 @@ int main() {
 			auto module = driver->GetModuleBase(L"explorer.exe");
             auto msg_addr = module.addr + 0x4E;
             char msg[0x78 - 0x4E];
-            driver->ReadMemType(msg_addr, msg);
+			if (driver->ReadMemType(msg_addr, msg) != STATUS_SUCCESS) {
+                return -1;
+			}
 			clock_t end = clock();
 			double time_spent = (double)(end - begin);
 			printf("Request took: %f | %fs\n", time_spent, time_spent / CLOCKS_PER_SEC);

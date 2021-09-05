@@ -39,7 +39,7 @@ public:
 		return status;
 	}
 
-	template <typename T>
+	template<typename T>
     const NTSTATUS ReadMemType(const ULONG_PTR addr, T& _val, const DWORD sz = sizeof(T)) {
         REQUEST_READ req;
         req.ProcessId = this->ProcessId;
@@ -47,7 +47,7 @@ public:
         req.Src       = (PBYTE*) addr;
         req.Size      = sz;
         return this->SendRequest(REQUEST_TYPE::READ, &req);
-	}
+    }
 
 	const UINT GetProcessId(const wchar_t* process_name) {
 		UINT pid = 0;
