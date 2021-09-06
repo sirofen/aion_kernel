@@ -5,8 +5,7 @@ int main() {
 	if (driver->Init(FALSE)) {
 		printf("Success!\n");
 		driver->Attach(L"explorer.exe");
-		for(int i = 0; i < 4; i++)
-		{
+        while (!(GetAsyncKeyState(VK_F12))) {
 			clock_t begin = clock();
 			auto module = driver->GetModuleBase(L"explorer.exe");
             auto msg_addr = module.addr + 0x4E;
@@ -19,6 +18,7 @@ int main() {
 			printf("Request took: %f | %fs\n", time_spent, time_spent / CLOCKS_PER_SEC);
 			printf("base.addr: 0x%llX\n", module.addr);
 			printf("base.size: 0x%llX\n", module.size);
+
             printf("DOS stub message: %s\n", msg);
 			Sleep(2000);
 		}
