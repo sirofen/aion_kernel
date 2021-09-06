@@ -12,8 +12,8 @@ PMODULE_ENTRY Utils::GetModuleByName(PEPROCESS process, PWCHAR moduleName) {
                 PLDR_DATA_TABLE_ENTRY module = CONTAINING_RECORD(entry, LDR_DATA_TABLE_ENTRY, InLoadOrderLinks);
 
                 if ((RtlCompareUnicodeString) (&module->BaseDllName, &moduleNameStr, TRUE) == 0) {
-                    auto pentry = MODULE_ENTRY(module);
-                    return &pentry;
+                    auto entry = MODULE_ENTRY(module);
+                    return &entry;
                 }
                 entry = module->InLoadOrderLinks.Flink;
             }
@@ -28,8 +28,8 @@ PMODULE_ENTRY Utils::GetModuleByName(PEPROCESS process, PWCHAR moduleName) {
             PLDR_DATA_TABLE_ENTRY32 module = CONTAINING_RECORD(plist_entry, LDR_DATA_TABLE_ENTRY32, InLoadOrderLinks);
 
             if (wcscmp((PWCH) module->BaseDllName.Buffer, moduleName) == 0) {
-                auto pentry = MODULE_ENTRY(module);
-                return &pentry;
+                auto entry = MODULE_ENTRY(module);
+                return &entry;
             }
             plist_entry = (PLIST_ENTRY32) plist_entry->Flink;
         }
