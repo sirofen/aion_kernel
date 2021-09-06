@@ -6,18 +6,17 @@ PMODULE_ENTRY Utils::GetModuleByName(PEPROCESS process, PWCHAR moduleName) {
     __try {
 
         PPEB peb64 = PsGetProcessPeb(process);
-        if (!peb64 || !peb64->Ldr) {
-            return NULL;
-        }
-        PLIST_ENTRY list = &(peb64->Ldr->InLoadOrderModuleList);
-        for (PLIST_ENTRY entry = list->Flink; entry != list;) {
-            PLDR_DATA_TABLE_ENTRY module = CONTAINING_RECORD(entry, LDR_DATA_TABLE_ENTRY, InLoadOrderLinks);
+        if (peb64 && peb64->Ldr) {
+            PLIST_ENTRY list = &(peb64->Ldr->InLoadOrderModuleList);
+            for (PLIST_ENTRY entry = list->Flink; entry != list;) {
+                PLDR_DATA_TABLE_ENTRY module = CONTAINING_RECORD(entry, LDR_DATA_TABLE_ENTRY, InLoadOrderLinks);
 
-            if ((RtlCompareUnicodeString) (&module->BaseDllName, &moduleNameStr, TRUE) == 0) {
-                auto pentry = MODULE_ENTRY(module);
-                return &pentry;
+                if ((RtlCompareUnicodeString) (&module->BaseDllName, &moduleNameStr, TRUE) == 0) {
+                    auto pentry = MODULE_ENTRY(module);
+                    return &pentry;
+                }
+                entry = module->InLoadOrderLinks.Flink;
             }
-            entry = module->InLoadOrderLinks.Flink;
         }
 
         PPEB32 peb32 = (PPEB32) PsGetProcessWow64Process(process);
