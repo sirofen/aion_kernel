@@ -174,14 +174,15 @@ NTSTATUS CallbackMODULE(PREQUEST_MODULE args)
 		PVOID base = NULL;
 		DWORD size = 0;
 		(KeAttachProcess)(process);
-		PLDR_DATA_TABLE_ENTRY module = Utils::GetModuleByName(process, args->Module);//L"ReadAndWriteMe.exe");//args->Module);
-		if (module) {
-			base = module->DllBase;
-			size = module->SizeOfImage;
-		}
-		else {
-			status = STATUS_NOT_FOUND;
-		}
+
+        PMODULE_ENTRY module_entry = Utils::GetModuleByName(process, args->Module);
+        if (module_entry) {
+            base = module_entry->Base;
+            size = module_entry->Size;
+        } else {
+            status = STATUS_NOT_FOUND;
+        }
+
 		(KeDetachProcess)();
 		if (NT_SUCCESS(status)) {
 			RtlCopyMemory(args->OutAddress, &base, sizeof(base));

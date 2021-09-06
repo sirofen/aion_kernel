@@ -43,9 +43,9 @@ public:
     const NTSTATUS ReadMemType(const ULONG_PTR addr, T& _val, const DWORD sz = sizeof(T)) {
         REQUEST_READ req;
         req.ProcessId = this->ProcessId;
-        req.Dest      = &_val;
-        req.Src       = (PBYTE*) addr;
-        req.Size      = sz;
+        req.Dest = &_val;
+        req.Src = (PBYTE*) addr;
+        req.Size = sz;
         return this->SendRequest(REQUEST_TYPE::READ, &req);
     }
 

@@ -1,20 +1,44 @@
 #include "stdafx.h"
 
-PLDR_DATA_TABLE_ENTRY Utils::GetModuleByName(PEPROCESS process, PWCHAR moduleName)
-{
-	UNICODE_STRING moduleNameStr = { 0 };
-	RtlInitUnicodeString((PUNICODE_STRING)&moduleNameStr, (PCWSTR)moduleName);
+PMODULE_ENTRY Utils::GetModuleByName(PEPROCESS process, PWCHAR moduleName) {
+    UNICODE_STRING moduleNameStr = {0};
+    RtlInitUnicodeString((PUNICODE_STRING) &moduleNameStr, (PCWSTR) moduleName);
+    __try {
 
-	PLIST_ENTRY list = &((PsGetProcessPeb)(process)->Ldr->InLoadOrderModuleList);
-	for (PLIST_ENTRY entry = list->Flink; entry != list; ) {
-		PLDR_DATA_TABLE_ENTRY module = CONTAINING_RECORD(entry, LDR_DATA_TABLE_ENTRY, InLoadOrderLinks);
+        PPEB peb64 = PsGetProcessPeb(process);
+        if (!peb64 || !peb64->Ldr) {
+            return NULL;
+        }
+        PLIST_ENTRY list = &(peb64->Ldr->InLoadOrderModuleList);
+        for (PLIST_ENTRY entry = list->Flink; entry != list;) {
+            PLDR_DATA_TABLE_ENTRY module = CONTAINING_RECORD(entry, LDR_DATA_TABLE_ENTRY, InLoadOrderLinks);
 
-		if ((RtlCompareUnicodeString)(&module->BaseDllName, &moduleNameStr, TRUE) == 0) {
-			return module;
-		}
-		entry = module->InLoadOrderLinks.Flink;
-	}
-	return NULL;
+            if ((RtlCompareUnicodeString) (&module->BaseDllName, &moduleNameStr, TRUE) == 0) {
+                auto pentry = MODULE_ENTRY(module);
+                return &pentry;
+            }
+            entry = module->InLoadOrderLinks.Flink;
+        }
+
+        PPEB32 peb32 = (PPEB32) PsGetProcessWow64Process(process);
+        if (!peb32 || !peb32->Ldr) {
+            return NULL;
+        }
+        for (PLIST_ENTRY32 plist_entry = (PLIST_ENTRY32) ((PPEB_LDR_DATA32) peb32->Ldr)->InLoadOrderModuleList.Flink;
+             plist_entry != &((PPEB_LDR_DATA32) peb32->Ldr)->InLoadOrderModuleList;) {
+            PLDR_DATA_TABLE_ENTRY32 module = CONTAINING_RECORD(plist_entry, LDR_DATA_TABLE_ENTRY32, InLoadOrderLinks);
+
+            if (wcscmp((PWCH) module->BaseDllName.Buffer, moduleName) == 0) {
+                auto pentry = MODULE_ENTRY(module);
+                return &pentry;
+            }
+            plist_entry = (PLIST_ENTRY32) plist_entry->Flink;
+        }
+
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        print("%s: Exception, Code: 0x%X\n", __FUNCTION__, GetExceptionCode());
+    }
+    return NULL;
 }
 
 const DWORD Utils::PhysicalMemory::GetUserDirectoryTableBaseOffset()

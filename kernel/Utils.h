@@ -56,12 +56,70 @@ typedef struct _LDR_DATA_TABLE_ENTRY {
 	ULONG TimeDateStamp;
 } LDR_DATA_TABLE_ENTRY, * PLDR_DATA_TABLE_ENTRY;
 
+typedef struct _LDR_DATA_TABLE_ENTRY32 {
+    LIST_ENTRY32 InLoadOrderLinks;
+    LIST_ENTRY32 InMemoryOrderLinks;
+    LIST_ENTRY32 InInitializationOrderLinks;
+    ULONG DllBase;
+    ULONG EntryPoint;
+    ULONG SizeOfImage;
+    UNICODE_STRING32 FullDllName;
+    UNICODE_STRING32 BaseDllName;
+    ULONG Flags;
+    USHORT LoadCount;
+    USHORT TlsIndex;
+    LIST_ENTRY32 HashLinks;
+    ULONG TimeDateStamp;
+} LDR_DATA_TABLE_ENTRY32, *PLDR_DATA_TABLE_ENTRY32;
+
+typedef struct _PEB_LDR_DATA32 {
+    ULONG Length;
+    UCHAR Initialized;
+    ULONG SsHandle;
+    LIST_ENTRY32 InLoadOrderModuleList;
+    LIST_ENTRY32 InMemoryOrderModuleList;
+    LIST_ENTRY32 InInitializationOrderModuleList;
+} PEB_LDR_DATA32, *PPEB_LDR_DATA32;
+
+typedef struct _PEB32 {
+    UCHAR InheritedAddressSpace;
+    UCHAR ReadImageFileExecOptions;
+    UCHAR BeingDebugged;
+    UCHAR BitField;
+    ULONG Mutant;
+    ULONG ImageBaseAddress;
+    ULONG Ldr;
+    ULONG ProcessParameters;
+    ULONG SubSystemData;
+    ULONG ProcessHeap;
+    ULONG FastPebLock;
+    ULONG AtlThunkSListPtr;
+    ULONG IFEOKey;
+    ULONG CrossProcessFlags;
+    ULONG UserSharedInfoPtr;
+    ULONG SystemReserved;
+    ULONG AtlThunkSListPtr32;
+    ULONG ApiSetMap;
+} PEB32, *PPEB32;
+
+typedef struct _MODULE_ENTRY {
+    const PVOID& Base;
+    const DWORD& Size;
+    _MODULE_ENTRY(const PLDR_DATA_TABLE_ENTRY& entry)
+        : Base(entry->DllBase)
+        , Size(entry->SizeOfImage) {}
+    _MODULE_ENTRY(const PLDR_DATA_TABLE_ENTRY32& entry)
+        : Base((PVOID)entry->DllBase)
+        , Size(entry->SizeOfImage) {}
+    } MODULE_ENTRY, *PMODULE_ENTRY;
+
 extern "C" POBJECT_TYPE * IoDriverObjectType;
 extern "C" {
 	NTSTATUS NTAPI MmCopyVirtualMemory(PEPROCESS SourceProcess, PVOID SourceAddress, PEPROCESS TargetProcess, PVOID TargetAddress, SIZE_T BufferSize, KPROCESSOR_MODE PreviousMode, PSIZE_T ReturnSize);
 	NTSYSAPI NTSTATUS NTAPI ObReferenceObjectByName(PUNICODE_STRING ObjectPath, ULONG Attributes, PACCESS_STATE PassedAccessState, ACCESS_MASK DesiredAccess, POBJECT_TYPE ObjectType, KPROCESSOR_MODE AccessMode, PVOID ParseContext, PVOID* ObjectPtr);
 	NTKERNELAPI PVOID PsGetProcessSectionBaseAddress(PEPROCESS Process);
 	NTKERNELAPI PPEB  NTAPI PsGetProcessPeb(IN PEPROCESS Process);
+    NTKERNELAPI PVOID NTAPI PsGetProcessWow64Process(_In_ PEPROCESS Process);
 	NTSTATUS NTAPI ZwProtectVirtualMemory(HANDLE ProcessHandle, PVOID* BaseAddress, SIZE_T* NumberOfBytesToProtect, ULONG NewAccessProtection, PULONG OldAccessProtection);
 }
 
@@ -118,7 +176,7 @@ namespace Utils {
 	//Defaults:
 	//const bool bCheckMask(PCHAR base, PCHAR pattern, PCHAR mask);
 	//const UINT64 FindPattern(const UINT64 dwAddress, const UINT dwLen, const PCHAR bMask, const PCHAR szMask);
-	PLDR_DATA_TABLE_ENTRY GetModuleByName(PEPROCESS process, PWCHAR moduleName);
+	PMODULE_ENTRY GetModuleByName(PEPROCESS process, PWCHAR moduleName);
 	//Physical Memory:
 	namespace PhysicalMemory { //https://www.unknowncheats.me/forum/anti-cheat-bypass/444289-read-process-physical-memory-attach.html
 		const DWORD GetUserDirectoryTableBaseOffset();
