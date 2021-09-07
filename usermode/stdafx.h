@@ -7,7 +7,9 @@
 #include <mutex>
 #include <TlHelp32.h>
 
-#include "utils.h"
-#include "driver.h"
+#include <utils.h>
+#include <driver.h>
+
+#include <aion_offsets.hpp>
 
 #pragma comment(lib, "ntdll.lib")

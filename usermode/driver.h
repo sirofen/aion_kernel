@@ -81,7 +81,15 @@ public:
 		return false;
 	}
 	//If PhysicalMode is Aktive ModuleName is not used because it only gets Gamebase! 
-	typedef struct Module { uint64_t addr; DWORD size; };
+	typedef struct Module {
+		uint64_t addr; DWORD size;
+		const bool empty() noexcept {
+			if (addr == 0 || size == 0) {
+				return true;
+			}
+			return false;
+		}
+	};
 	const Module GetModuleBase(const wchar_t* ModuleName = 0) {
 		if (bPhysicalMode) {
 			REQUEST_MAINBASE req;
