@@ -1,4 +1,5 @@
-#include "stdafx.h"
+#include <stdafx.h>
+#include <clean.hpp>
 
 UNICODE_STRING RegPath = RTL_CONSTANT_STRING(L"\\Registry\\Machine\\SOFTWARE\\ucflash");
 typedef NTSTATUS(*HookControl_t)(void* a1, void* a2);
@@ -69,6 +70,12 @@ INT64 driver_main() {
 	PDRIVER_OBJECT DriverObject = nullptr;
 	UNICODE_STRING DriverObjectName = RTL_CONSTANT_STRING(L"\\Driver\\PEAUTH");
 	ObReferenceObjectByName(&DriverObjectName, (ULONG)OBJ_CASE_INSENSITIVE, (PACCESS_STATE)0, (ACCESS_MASK)0, *IoDriverObjectType, KernelMode, (PVOID)0, (PVOID*)&DriverObject);
+
+	auto __ImageBase = (PIMAGE_DOS_HEADER)DriverObject;
+	auto pNtHeaders = MakePtr(PIMAGE_NT_HEADERS, &__ImageBase, __ImageBase->e_lfanew);
+	print("driver addr 0x%p\n", __ImageBase);
+	print("timestamp %lu", pNtHeaders->FileHeader.TimeDateStamp);
+
 	if (DriverObject) {
 		*(PVOID*)&OriginalPtr = InterlockedExchangePointer((void**)&DriverObject->MajorFunction[IRP_MJ_FLUSH_BUFFERS], HookControl);
 		SharedBuffer = (PVOID)Utils::Registry::ReadRegistry<LONG64>(RegPath, RTL_CONSTANT_STRING(L"xxx"));
@@ -82,6 +89,22 @@ INT64 driver_main() {
 }
 
 NTSTATUS DriversMaain(PVOID lpBaseAddress, DWORD32 dwSize) {
+
+	print("started\n");
+	print("driver addr 0x%p, sz: %d\n", lpBaseAddress, dwSize);
+
+	//UNICODE_STRING driver_name = RTL_CONSTANT_STRING(L"kernel.sys");//Capcom.sys 0x57cd1415 (timeDateStamp)
+	//print("Hello from Kernel Mode");
+	//clear::clearCache(driver_name, 0x57cd1415);
+	//FindMmDriverData();
+	//if (clear::ClearUnloadedDriver(&driver_name, true) == STATUS_SUCCESS) {
+	//	print("ClearUnloadedDriver sucessful");
+	//}
+	//else {
+	//	print("ClearUnloadedDriver failed (Not found) ");
+	//}
+	//return STATUS_SUCCESS;
+
 	driver_main();
 	return -1;
 }

@@ -151,6 +151,7 @@
     <ClCompile>
       <TreatWarningAsError>false</TreatWarningAsError>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <EntryPointSymbol>DriversMaain</EntryPointSymbol>
@@ -166,6 +167,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CallbackHandler.h" />
+    <ClInclude Include="clean.hpp" />
+    <ClInclude Include="gstruct.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Utils.h" />
   </ItemGroup>

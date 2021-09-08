@@ -38,5 +38,11 @@
     <ClInclude Include="CallbackHandler.h">
       <Filter>Handler</Filter>
     </ClInclude>
+    <ClInclude Include="clean.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gstruct.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
