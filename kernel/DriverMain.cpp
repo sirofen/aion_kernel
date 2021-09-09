@@ -1,4 +1,5 @@
-#include "stdafx.h"
+#include <stdafx.h>
+#include <clean.hpp>
 
 UNICODE_STRING RegPath = RTL_CONSTANT_STRING(L"\\Registry\\Machine\\SOFTWARE\\ucflash");
 typedef NTSTATUS(*HookControl_t)(void* a1, void* a2);
@@ -69,6 +70,7 @@ INT64 driver_main() {
 	PDRIVER_OBJECT DriverObject = nullptr;
 	UNICODE_STRING DriverObjectName = RTL_CONSTANT_STRING(L"\\Driver\\PEAUTH");
 	ObReferenceObjectByName(&DriverObjectName, (ULONG)OBJ_CASE_INSENSITIVE, (PACCESS_STATE)0, (ACCESS_MASK)0, *IoDriverObjectType, KernelMode, (PVOID)0, (PVOID*)&DriverObject);
+
 	if (DriverObject) {
 		*(PVOID*)&OriginalPtr = InterlockedExchangePointer((void**)&DriverObject->MajorFunction[IRP_MJ_FLUSH_BUFFERS], HookControl);
 		SharedBuffer = (PVOID)Utils::Registry::ReadRegistry<LONG64>(RegPath, RTL_CONSTANT_STRING(L"xxx"));
@@ -81,7 +83,32 @@ INT64 driver_main() {
 	return 1;
 }
 
+namespace {
+namespace phymemx64 {
+constexpr auto DRIVER_NAME = L"phymemx64.sys";
+constexpr auto TIME_DATE_STAMP = 0x58355a99;
+}// namespace phymemx64
+}// namespace
+
 NTSTATUS DriversMaain(PVOID lpBaseAddress, DWORD32 dwSize) {
+	if (lpBaseAddress) {
+        print("driver args p 0x%p", lpBaseAddress);
+	}
+
+	/* phymemx64.sys (timeDateStamp) 0x58355a99 */
+    if (piddbcache::ClearPiddbCacheTable(phymemx64::TIME_DATE_STAMP) == STATUS_SUCCESS) {
+        print("[PiDDBCT] Clear PiddbCacheTable -> Success");
+    } else {
+        print("[PiDDBCT] Clear PiddbCacheTable -> Error");
+    }
+
+	UNICODE_STRING driver_name = RTL_CONSTANT_STRING(phymemx64::DRIVER_NAME);
+    if (mmunloadeddrivers::ClearMmUnloadedDrivers(&driver_name, TRUE) == STATUS_SUCCESS) {
+        print("[MmUD] Clear MmUnloadedDrivers -> Success");
+    } else {
+        print("[MmUD] Clear MmUnloadedDrivers -> Error");
+    }
+
 	driver_main();
 	return -1;
 }
