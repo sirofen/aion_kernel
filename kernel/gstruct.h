@@ -1,4 +1,4 @@
-// https://github.com/BadPlayer555/TraceCleaner/blob/master/TraceCleaner/struct.h
+//https://github.com/BadPlayer555/TraceCleaner/blob/master/TraceCleaner/struct.h
 #pragma once
 
 typedef unsigned char       BYTE;
@@ -203,12 +203,9 @@ ZwQuerySystemInformation(
 	IN ULONG SystemInformationLength,
 	OUT PULONG ReturnLength OPTIONAL
 );
-
-#define MM_UNLOADED_DRIVERS_SIZE 50
-typedef struct _MM_UNLOADED_DRIVER
-{
-	UNICODE_STRING 	Name;
-	PVOID 			ModuleStart;
-	PVOID 			ModuleEnd;
-	ULONG64 		UnloadTime;
-} MM_UNLOADED_DRIVER, * PMM_UNLOADED_DRIVER;
+typedef struct _MM_UNLOADED_DRIVER {
+    UNICODE_STRING Name;
+    PVOID ModuleStart;
+    PVOID ModuleEnd;
+    ULONG64 UnloadTime;
+} MM_UNLOADED_DRIVER, *PMM_UNLOADED_DRIVER;

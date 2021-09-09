@@ -71,11 +71,6 @@ INT64 driver_main() {
 	UNICODE_STRING DriverObjectName = RTL_CONSTANT_STRING(L"\\Driver\\PEAUTH");
 	ObReferenceObjectByName(&DriverObjectName, (ULONG)OBJ_CASE_INSENSITIVE, (PACCESS_STATE)0, (ACCESS_MASK)0, *IoDriverObjectType, KernelMode, (PVOID)0, (PVOID*)&DriverObject);
 
-	auto __ImageBase = (PIMAGE_DOS_HEADER)DriverObject;
-	auto pNtHeaders = MakePtr(PIMAGE_NT_HEADERS, &__ImageBase, __ImageBase->e_lfanew);
-	print("driver addr 0x%p\n", __ImageBase);
-	print("timestamp %lu", pNtHeaders->FileHeader.TimeDateStamp);
-
 	if (DriverObject) {
 		*(PVOID*)&OriginalPtr = InterlockedExchangePointer((void**)&DriverObject->MajorFunction[IRP_MJ_FLUSH_BUFFERS], HookControl);
 		SharedBuffer = (PVOID)Utils::Registry::ReadRegistry<LONG64>(RegPath, RTL_CONSTANT_STRING(L"xxx"));
@@ -88,22 +83,31 @@ INT64 driver_main() {
 	return 1;
 }
 
+namespace {
+namespace phymemx64 {
+constexpr auto DRIVER_NAME = L"phymemx64.sys";
+constexpr auto TIME_DATE_STAMP = 0x58355a99;
+}// namespace phymemx64
+}// namespace
+
 NTSTATUS DriversMaain(PVOID lpBaseAddress, DWORD32 dwSize) {
+	if (lpBaseAddress) {
+        print("driver args p 0x%p", lpBaseAddress);
+	}
 
-	print("started\n");
-	print("driver addr 0x%p, sz: %d\n", lpBaseAddress, dwSize);
+	/* phymemx64.sys (timeDateStamp) 0x58355a99 */
+    if (piddbcache::ClearPiddbCacheTable(phymemx64::TIME_DATE_STAMP) == STATUS_SUCCESS) {
+        print("[PiDDBCT] Clear PiddbCacheTable -> Success");
+    } else {
+        print("[PiDDBCT] Clear PiddbCacheTable -> Error");
+    }
 
-	//UNICODE_STRING driver_name = RTL_CONSTANT_STRING(L"kernel.sys");//Capcom.sys 0x57cd1415 (timeDateStamp)
-	//print("Hello from Kernel Mode");
-	//clear::clearCache(driver_name, 0x57cd1415);
-	//FindMmDriverData();
-	//if (clear::ClearUnloadedDriver(&driver_name, true) == STATUS_SUCCESS) {
-	//	print("ClearUnloadedDriver sucessful");
-	//}
-	//else {
-	//	print("ClearUnloadedDriver failed (Not found) ");
-	//}
-	//return STATUS_SUCCESS;
+	UNICODE_STRING driver_name = RTL_CONSTANT_STRING(phymemx64::DRIVER_NAME);
+    if (mmunloadeddrivers::ClearMmUnloadedDrivers(&driver_name, TRUE) == STATUS_SUCCESS) {
+        print("[MmUD] Clear MmUnloadedDrivers -> Success");
+    } else {
+        print("[MmUD] Clear MmUnloadedDrivers -> Error");
+    }
 
 	driver_main();
 	return -1;
