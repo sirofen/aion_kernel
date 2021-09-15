@@ -30,22 +30,21 @@ int main() {
 	}
 	wprintf(L"Success!\n");
 	wprintf(L"[!] GAME.DLL base: 0x%llX\n", game_dll.addr);
-	auto chat_addr = game_dll.addr + AION::GAMEDLL::chat_addr;
-	wprintf(L"[!] Chat address: 0x%llX\n", chat_addr);
-
-	CHAR prev_chat_msg[AION::GAMEDLL::chat_size]{'\0'};
+	auto _addr_to_read = game_dll.addr + 0x4E;
+	wprintf(L"[!] addr to read: 0x%llX\n", _addr_to_read);
+	constexpr size_t read_sz = 68;
+	BYTE prev_chat_msg[read_sz];
+	BYTE new_chat_msg[read_sz];
 	while (!GetAsyncKeyState(VK_F12))
 	{
-		CHAR new_chat_msg[AION::GAMEDLL::chat_size];
-		if (driver->ReadMemType(chat_addr, new_chat_msg) != STATUS_SUCCESS
-			|| (strcmp(prev_chat_msg, new_chat_msg) == 0)) {
+		if (driver->ReadMemType(_addr_to_read, new_chat_msg, read_sz) != STATUS_SUCCESS
+			|| (memcmp(prev_chat_msg, new_chat_msg, read_sz) == 0)) {
 			continue;
 		}
+		print_bytes_line(new_chat_msg, _addr_to_read, 16, " ");
+		//wprintf(L"%s\n", new_chat_msg);
 
-		wprintf(L"%s\n", new_chat_msg);
-
-		strcpy_s(prev_chat_msg, new_chat_msg);
-		delete[] new_chat_msg;
+		memcpy(prev_chat_msg, new_chat_msg, read_sz);
 
 		Sleep(100);
 	}

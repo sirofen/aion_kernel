@@ -2,7 +2,7 @@
 #include <windef.h>
 
 namespace AION {
-	constexpr LPCWSTR aion_bin = L"aion.bin";
+	constexpr LPCWSTR aion_bin = L"Aion.bin";
 	namespace GAMEDLL {
 		constexpr LPCWSTR module_name = L"Game.dll";
 		constexpr DWORD chat_addr = 0xC19B45;
