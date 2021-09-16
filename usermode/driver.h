@@ -39,8 +39,17 @@ public:
 		return status;
 	}
 
+	const NTSTATUS ReadMem(const ULONG_PTR& addr, void* _val, const DWORD sz) {
+		REQUEST_READ req;
+		req.ProcessId = this->ProcessId;
+		req.Dest = _val;
+		req.Src = (PBYTE*)addr;
+		req.Size = sz;
+		return this->SendRequest(REQUEST_TYPE::READ, &req);
+	}
+
 	template<typename T>
-    const NTSTATUS ReadMemType(const ULONG_PTR addr, T& _val, const DWORD sz = sizeof(T)) {
+    const NTSTATUS ReadMemType(const ULONG_PTR& addr, T& _val, const DWORD sz = sizeof(T)) {
         REQUEST_READ req;
         req.ProcessId = this->ProcessId;
         req.Dest = &_val;
@@ -90,6 +99,10 @@ public:
 			return false;
 		}
 	};
+
+	const std::uintptr_t FindPattern(const std::uintptr_t& base, const std::size_t& length, const BYTE*& pattern, const BYTE& mask);
+	const std::uintptr_t FindPatternModule(const Module& module, const BYTE*&& pattern, const BYTE& mask = 0);
+
 	const Module GetModuleBase(const wchar_t* ModuleName = 0) {
 		if (bPhysicalMode) {
 			REQUEST_MAINBASE req;
