@@ -1,58 +1,5 @@
 #pragma once
 
-#define print_bytes(ARRAY, DELIM) for (const auto& _c : ARRAY) { wprintf_s(L"%02X"##DELIM, _c); } wprintf_s(L"\n")
-#define print_bytes_line(ARRAY, START_ADDRESS, N_ELEMENTS_IN_LINE, DELIM)													\
-	const auto& arr_sz = sizeof(ARRAY);																						\
-	for (std::size_t i = 0; i < arr_sz; i++) {																				\
-		auto last_iter = (i + 1) == arr_sz;																					\
-		if (i % N_ELEMENTS_IN_LINE == 0 || last_iter) {																		\
-		std::size_t iter_sz_part;																							\
-		if (last_iter) {																									\
-			iter_sz_part = i - arr_sz % N_ELEMENTS_IN_LINE + 1;																\
-			wprintf_s(L"%02X"##DELIM, ARRAY[i]);																			\
-			std::wcout << std::wstring((N_ELEMENTS_IN_LINE - (arr_sz % N_ELEMENTS_IN_LINE)) * 3, L' ');	\
-		}																													\
-		else { iter_sz_part = i - N_ELEMENTS_IN_LINE; }																		\
-			for (std::size_t j = 0; i != 0 && j < N_ELEMENTS_IN_LINE && j + iter_sz_part < arr_sz; j++) {					\
-				const auto& _c = ARRAY[j + iter_sz_part];																	\
-				wprintf_s(j == 0 ? L"\t%C":L"%C", std::isgraph(_c) || _c == 0x20 ? _c : '.');								\
-			}																												\
-			if (!last_iter) {																								\
-				wprintf_s(L"\n0x%llX:\t", START_ADDRESS + i);																\
-			}																												\
-		}																													\
-		if (!last_iter) {																									\
-		wprintf_s(L"%02X"##DELIM, ARRAY[i]);																				\
-		}																													\
-	}																														\
-	wprintf_s(L"\n")
-//void print_bytes_line(const BYTE* cstr, const std::uintptr_t & start_address, const int n_lm_in_line, const wchar_t& delim) {
-//		const auto& arr_sz = sizeof(cstr);
-//	for (std::size_t i = 0; i < arr_sz; i++) {																
-//		auto last_iter = (i + 1) == arr_sz;																	
-//		if (i % n_lm_in_line == 0 || last_iter) {
-//		std::size_t iter_sz_part;																			
-//		if (last_iter) {																					
-//			iter_sz_part = i - arr_sz % n_lm_in_line + 1;
-//			wprintf_s(L"%02X%c", cstr[i], delim);
-//			std::wcout << std::wstring((n_lm_in_line - (arr_sz % n_lm_in_line)) * 3, L' ');
-//		}																									
-//		else { iter_sz_part = i - n_lm_in_line; }														
-//			for (std::size_t j = 0; i != 0 && j < n_lm_in_line && j + iter_sz_part < arr_sz; j++) {
-//				const auto& _c = cstr[j + iter_sz_part];													
-//				wprintf_s(j == 0 ? L"\t%C":L"%C", std::isgraph(_c) || _c == 0x20 ? _c : '.');				
-//			}																								
-//			if (!last_iter) {																				
-//				wprintf_s(L"\n0x%llX:\t", start_address + i);
-//			}																								
-//		}																									
-//		if (!last_iter) {																					
-//		wprintf_s(L"%02X%c", delim , cstr[i]);																
-//		}																									
-//	}																										
-//	wprintf_s(L"\n");
-//}
-
 typedef enum _KEY_VALUE_INFORMATION_CLASS {
 	KeyValueBasicInformation,
 	KeyValueFullInformation,

@@ -150,6 +150,7 @@
   <ItemGroup>
     <ClInclude Include="aion_offsets.hpp" />
     <ClInclude Include="driver.h" />
+    <ClInclude Include="macro.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>
