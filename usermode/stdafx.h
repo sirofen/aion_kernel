@@ -5,6 +5,7 @@
 #include <ntstatus.h>
 #include <atomic>
 #include <mutex>
+#include <map>
 #include <TlHelp32.h>
 
 #include <utils.h>

@@ -184,11 +184,11 @@ NTSTATUS ClearPiddbCacheTable(ULONG TimeStamp) {
          CurrEntry != NULL;                                                                 /* as long as the current entry is valid */
          CurrEntry = (PPiDDBCacheEntry) RtlEnumerateGenericTableAvl(PiDDBCacheTable, FALSE) /* no restart, get latest element */
     ) {
-#if DEBUG_PIDDBCACHE
-        print("[PiDDBCT] Entry Name -> %wZ\t:\tEntry TimeStamp -> 0x%x",
-              CurrEntry->DriverName,
-              CurrEntry->TimeDateStamp);
-#endif
+
+        PRINT_DEBUG("[PiDDBCT] Entry Name -> %wZ\t:\tEntry TimeStamp -> 0x%x",
+                    CurrEntry->DriverName,
+                    CurrEntry->TimeDateStamp);
+
         if (CurrEntry->TimeDateStamp == TimeStamp) {
             print("[PiDDBCT] Found Entry -> %wZ\t:\tEntry TimeStamp -> 0x%x",
                   CurrEntry->DriverName,
@@ -305,9 +305,9 @@ NTSTATUS ClearMmUnloadedDrivers(_In_ PUNICODE_STRING DriverName, _In_ BOOLEAN Ac
         if (Entry->Name.Buffer == NULL && !Modified) {
             break;
         }
-#if DEBUG_MMUNLOADEDDRIVERS
-        print("[MmUD] MmUnloadedDrivers Entry: %S, COMPARING TO %S", Entry->Name.Buffer, DriverName->Buffer);
-#endif
+
+        PRINT_DEBUG("[MmUD] MmUnloadedDrivers Entry: %S, COMPARING TO %S", Entry->Name.Buffer, DriverName->Buffer);
+
         if (Modified) {
             PMM_UNLOADED_DRIVER PrevEntry = &MmUnloadedDrivers[Index - 1];
             RtlCopyMemory(PrevEntry, Entry, sizeof(MM_UNLOADED_DRIVER));
@@ -316,9 +316,9 @@ NTSTATUS ClearMmUnloadedDrivers(_In_ PUNICODE_STRING DriverName, _In_ BOOLEAN Ac
             }
 //        } else if (RtlEqualUnicodeString(DriverName, &Entry->Name, TRUE)) {
         } else if (_wcsicmp(DriverName->Buffer, Entry->Name.Buffer) == 0) {
-#if DEBUG_MMUNLOADEDDRIVERS
-            print("[MmUD] Match found! MmUnloadedDrivers Entry: %S", Entry->Name.Buffer);
-#endif
+
+            PRINT_DEBUG("[MmUD] Match found! MmUnloadedDrivers Entry: %S", Entry->Name.Buffer);
+
             PVOID BufferPool = Entry->Name.Buffer;
             RtlFillMemory(Entry, sizeof(MM_UNLOADED_DRIVER), 0);
             ExFreePoolWithTag(BufferPool, MMUD_POOL_TAG);

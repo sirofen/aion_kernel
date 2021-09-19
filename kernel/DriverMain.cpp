@@ -34,6 +34,7 @@ NTSTATUS HookControl(PDEVICE_OBJECT device, PIRP irp) {
 					CallbackHandler(PROTECT);
 					CallbackHandler(ALLOC);
 					CallbackHandler(FREE);
+                    //CallbackHandler(PAGES);
 					CallbackHandler(MODULE);
 					CallbackHandler(MAINBASE);
 				case THREADCALL: {

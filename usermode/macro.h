@@ -61,7 +61,7 @@
 		if (_RET_VAL != _CACHE[_ITERATION]) {													\
 			if (_PRINT_BASE_ADDR) { wprintf_s(L"\n\t{%u}:[0x%llX]", _ITERATION, _ADDRESS); }	\
 			if (_OFFSET != 0x0) {																\
-				wprintf_s(L" (%s0x%llX)", _OFFSET > 0 ? "+ " : "- ", _OFFSET);					\
+				wprintf_s(L" %S0x%llX", _OFFSET > 0 ? "+ " : "- ", _OFFSET);					\
 			}																					\
 			wprintf_s(L" -> {%u}:[0x%llX]", _ITERATION + 1, _RET_VAL);							\
 			_CACHE[_ITERATION] = _RET_VAL;														\

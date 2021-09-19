@@ -32,10 +32,10 @@
     <ClInclude Include="utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="aion_offsets.hpp">
+    <ClInclude Include="macro.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="macro.h">
+    <ClInclude Include="aion_offsets.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -9,12 +9,13 @@
         break;																\
     }
 
-typedef enum _REQUEST_TYPE : UINT{
+typedef enum _REQUEST_TYPE : UINT {
 	WRITE,
 	READ,
 	PROTECT,
 	ALLOC,
 	FREE,
+    //PAGES,
 	MODULE,
 	MAINBASE,
 	THREADCALL,
@@ -62,11 +63,17 @@ typedef struct _REQUEST_FREE {
 	PVOID Address;
 } REQUEST_FREE, * PREQUEST_FREE;
 
+typedef struct _PAGE {
+    void* Address;
+    DWORD Size;
+} PAGE, *PPAGE;
+
 typedef struct _REQUEST_MODULE {
 	DWORD ProcessId;
 	WCHAR Module[0xFF];
 	PBYTE* OutAddress;
 	DWORD* OutSize;
+	PPAGE Pages;
 } REQUEST_MODULE, * PREQUEST_MODULE;
 
 typedef struct _REQUEST_MAINBASE {
@@ -74,10 +81,20 @@ typedef struct _REQUEST_MAINBASE {
 	PBYTE* OutAddress;
 } REQUEST_MAINBASE, * PREQUEST_MAINBASE;
 
+
+
+typedef struct _REQUEST_PAGES {
+    DWORD ProcessId;
+    PVOID ModuleBase;
+    DWORD ModuleSize;
+    PAGE (*Pages)[0x20];
+} REQUEST_PAGES, *PREQUEST_PAGES;
+
 NTSTATUS CallbackWRITE(PREQUEST_WRITE args);
 NTSTATUS CallbackREAD(PREQUEST_READ args);
 NTSTATUS CallbackPROTECT(PREQUEST_PROTECT args);
 NTSTATUS CallbackALLOC(PREQUEST_ALLOC args);
 NTSTATUS CallbackFREE(PREQUEST_FREE args);
+//NTSTATUS CallbackPAGES(PREQUEST_PAGES args);
 NTSTATUS CallbackMODULE(PREQUEST_MODULE args);
 NTSTATUS CallbackMAINBASE(PREQUEST_MAINBASE args);

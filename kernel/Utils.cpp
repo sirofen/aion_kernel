@@ -10,7 +10,7 @@ PMODULE_ENTRY Utils::GetModuleByName(PEPROCESS process, PWCHAR moduleName) {
             PLIST_ENTRY list = &(peb64->Ldr->InLoadOrderModuleList);
             for (PLIST_ENTRY entry = list->Flink; entry != list;) {
                 PLDR_DATA_TABLE_ENTRY module = CONTAINING_RECORD(entry, LDR_DATA_TABLE_ENTRY, InLoadOrderLinks);
-
+				print("[-] module64 entry: %S", module->BaseDllName.Buffer);
                 if ((RtlCompareUnicodeString) (&module->BaseDllName, &moduleNameStr, TRUE) == 0) {
                     auto entry = MODULE_ENTRY(module);
                     return &entry;
@@ -26,7 +26,8 @@ PMODULE_ENTRY Utils::GetModuleByName(PEPROCESS process, PWCHAR moduleName) {
         for (PLIST_ENTRY32 plist_entry = (PLIST_ENTRY32) ((PPEB_LDR_DATA32) peb32->Ldr)->InLoadOrderModuleList.Flink;
              plist_entry != &((PPEB_LDR_DATA32) peb32->Ldr)->InLoadOrderModuleList;) {
             PLDR_DATA_TABLE_ENTRY32 module = CONTAINING_RECORD(plist_entry, LDR_DATA_TABLE_ENTRY32, InLoadOrderLinks);
-
+			print("[-] module32 entry: %S", module->BaseDllName.Buffer);
+			//_wcsicmp
             if (wcscmp((PWCH) module->BaseDllName.Buffer, moduleName) == 0) {
                 auto entry = MODULE_ENTRY(module);
                 return &entry;

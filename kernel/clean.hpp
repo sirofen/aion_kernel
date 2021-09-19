@@ -6,9 +6,6 @@
 #define MMUD_POOL_TAG 'DUmM'
 #define MM_UNLOADED_DRIVERS_SIZE 50
 
-#define DEBUG_PIDDBCACHE TRUE
-#define DEBUG_MMUNLOADEDDRIVERS TRUE
-
 namespace piddbcache {
 NTSTATUS ClearPiddbCacheTable(ULONG TimeStamp);
 }

@@ -15,4 +15,5 @@
 
 #include <gstruct.h>
 
-#define print(fmt, ...) DbgPrintEx(0, 0, fmt, ##__VA_ARGS__)
+#define PRINT_VERBOSE_TRACE
+#include <print.h>

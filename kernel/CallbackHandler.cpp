@@ -1,6 +1,6 @@
 #include "stdafx.h"
-
 //Some stuff from: https://github.com/btbd/modmap/blob/master/driver/core.c
+_IRQL_requires_max_(APC_LEVEL)
 NTSTATUS CallbackWRITE(PREQUEST_WRITE args)
 {
 	if (((PBYTE)args->Src + args->Size < (PBYTE)args->Src) ||
@@ -61,6 +61,8 @@ NTSTATUS CallbackREAD(PREQUEST_READ args)
 
 		return STATUS_ACCESS_VIOLATION;
 	}
+    __try {
+
 
 	if (args->bPhysicalMem) {
 		PEPROCESS pProcess = NULL;
@@ -101,10 +103,15 @@ NTSTATUS CallbackREAD(PREQUEST_READ args)
 		}
 		return status;
 	}
-
 	return STATUS_UNSUCCESSFUL;
+
+
+    } __except(EXCEPTION_CONTINUE_EXECUTION) {
+        PRINT_ERROR("ERR CODE: %u", GetExceptionCode());
+	}
 }
 
+_IRQL_requires_max_(APC_LEVEL)
 NTSTATUS CallbackPROTECT(PREQUEST_PROTECT args)
 {
 	if (!args->ProcessId || !args->Address || !args->Size || !args->InOutProtect)
@@ -131,6 +138,7 @@ NTSTATUS CallbackPROTECT(PREQUEST_PROTECT args)
 	return status;
 }
 
+_IRQL_requires_max_(APC_LEVEL)
 NTSTATUS CallbackALLOC(PREQUEST_ALLOC args)
 {
 	PEPROCESS process = NULL;
@@ -150,6 +158,7 @@ NTSTATUS CallbackALLOC(PREQUEST_ALLOC args)
 	return status;
 }
 
+_IRQL_requires_max_(APC_LEVEL)
 NTSTATUS CallbackFREE(PREQUEST_FREE args)
 {
 	PEPROCESS process = NULL;
@@ -166,6 +175,65 @@ NTSTATUS CallbackFREE(PREQUEST_FREE args)
 	return status;
 }
 
+//NTSTATUS CallbackPAGES(PREQUEST_PAGES args) {
+//    PEPROCESS process = NULL;
+//    
+//    if (NTSTATUS status = (PsLookupProcessByProcessId) ((HANDLE) args->ProcessId, &process); 
+//		!NT_SUCCESS(status)) {
+//        return status;
+//    }
+//    PVOID base = NULL;
+//    DWORD size = 0;
+//    (KeAttachProcess)(process);
+//
+//    print("PAGESSSS");
+//	const auto& page_array_sz = sizeof(*args->Pages)/sizeof(*args->Pages[0]);
+//    PRINT_DEBUG("[!] page_array_sz: %u", page_array_sz);
+//    auto& page_array = args->Pages;
+//
+//	const auto& module_base = (UINT_PTR)args->ModuleBase;
+//	const auto& module_size = args->ModuleSize;
+//    PRINT_DEBUG("[!] module base: 0x%llX, sz: %u", module_base, module_size);
+//
+//	MEMORY_BASIC_INFORMATION mem_basic_inf = { 0 };
+//
+//	SIZE_T length = 0;
+//    DWORD page_iter = 0;
+//	for (auto cur_page_addr = module_base; 
+//		 cur_page_addr < module_base + module_size; 
+//		 cur_page_addr = (ULONG_PTR)mem_basic_inf.BaseAddress + mem_basic_inf.RegionSize) {
+//		//PRINT_DEBUG("[!] VirtualMemory base: 0x%p, sz: %lu", mem_basic_inf.BaseAddress, mem_basic_inf.RegionSize);
+//        if (NTSTATUS status = ZwQueryVirtualMemory(ZwCurrentProcess(),
+//                                                   (PVOID) (cur_page_addr),
+//                                                   MemoryBasicInformation,
+//                                                   &mem_basic_inf,
+//                                                   sizeof(mem_basic_inf),
+//                                                   &length);
+//            status != STATUS_SUCCESS) {
+//            return status;
+//		}
+//		if (mem_basic_inf.State == MEM_COMMIT && mem_basic_inf.Protect != PAGE_NOACCESS && !(mem_basic_inf.Protect & PAGE_GUARD)) {
+//			if (!page_iter < page_array_sz) {
+//                PRINT_ERROR("[?] Page container is too small. Size: %u. Current iteration: %u", page_array_sz, page_iter);
+//                return STATUS_ARRAY_BOUNDS_EXCEEDED;
+//			}
+//            page_iter++;
+//            //(*page_array)[page_iter++] = {mem_basic_inf.BaseAddress, (DWORD)mem_basic_inf.RegionSize};
+//
+//			PRINT_DEBUG("[!] Accessible page - base: 0x%p, sz: %lu", mem_basic_inf.BaseAddress, mem_basic_inf.RegionSize);
+//		}
+//        PRINT_TRACE("[!] ALL PAGES - base: 0x%p, sz: %lu, state: 0x%ulX, protect: 0x%lX",
+//                    mem_basic_inf.BaseAddress,
+//                    mem_basic_inf.RegionSize,
+//                    mem_basic_inf.State,
+//                    mem_basic_inf.Protect);
+//	}
+//    (KeDetachProcess)();
+//    (ObfDereferenceObject)(process);
+//    return page_iter > 0 ? STATUS_SUCCESS : STATUS_NOT_FOUND;
+//}
+
+_IRQL_requires_max_(APC_LEVEL)
 NTSTATUS CallbackMODULE(PREQUEST_MODULE args)
 {
 	PEPROCESS process = NULL;
@@ -173,18 +241,39 @@ NTSTATUS CallbackMODULE(PREQUEST_MODULE args)
 	if (NT_SUCCESS(status)) {
 		PVOID base = NULL;
 		DWORD size = 0;
+        PAGE pages[0x20] = {0};
 		(KeAttachProcess)(process);
 
         PMODULE_ENTRY module_entry = Utils::GetModuleByName(process, args->Module);
         if (module_entry) {
             base = module_entry->Base;
             size = module_entry->Size;
+			PRINT_DEBUG("[!] %S - base: 0x%p, sz: %u", args->Module, base, size);
+			MEMORY_BASIC_INFORMATION mem_basic_inf = { 0 };
+
+            DWORD page_iter = 0;
+			for (auto cur_page_addr = (UINT_PTR)base; cur_page_addr < (UINT_PTR)base + size; cur_page_addr = (ULONG_PTR)mem_basic_inf.BaseAddress + mem_basic_inf.RegionSize) {
+				if (ZwQueryVirtualMemory(ZwCurrentProcess(), (PVOID)((UINT_PTR)cur_page_addr), MemoryBasicInformation, &mem_basic_inf, sizeof(mem_basic_inf), NULL) != STATUS_SUCCESS) {
+					return STATUS_UNSUCCESSFUL;
+				}
+				if (mem_basic_inf.State == MEM_COMMIT && mem_basic_inf.Protect != PAGE_NOACCESS && !(mem_basic_inf.Protect & PAGE_GUARD)) {
+					PRINT_DEBUG("[!] Accessible page - base: 0x%p, sz: %lu", mem_basic_inf.BaseAddress, mem_basic_inf.RegionSize);
+                    pages[page_iter++] = {mem_basic_inf.BaseAddress, (DWORD) mem_basic_inf.RegionSize};
+				}
+                PRINT_TRACE("[!] ALL PAGES - base: 0x%p, sz: %lu, state: %lu, protect: %lu",
+                            mem_basic_inf.BaseAddress,
+                            mem_basic_inf.RegionSize,
+                            mem_basic_inf.State,
+                            mem_basic_inf.Protect);
+            }
+
         } else {
             status = STATUS_NOT_FOUND;
         }
 
 		(KeDetachProcess)();
 		if (NT_SUCCESS(status)) {
+            RtlCopyMemory(args->Pages, &pages, sizeof(pages));
 			RtlCopyMemory(args->OutAddress, &base, sizeof(base));
 			RtlCopyMemory(args->OutSize, &size, sizeof(size));
 		}
@@ -193,6 +282,7 @@ NTSTATUS CallbackMODULE(PREQUEST_MODULE args)
 	return status;
 }
 
+_IRQL_requires_max_(APC_LEVEL)
 NTSTATUS CallbackMAINBASE(PREQUEST_MAINBASE args)
 {
 	PEPROCESS pProcess = NULL;

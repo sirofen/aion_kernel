@@ -89,20 +89,21 @@ public:
 			return true;
 		return false;
 	}
-	//If PhysicalMode is Aktive ModuleName is not used because it only gets Gamebase! 
+
 	typedef struct Module {
-		uint64_t addr; DWORD size;
-		const bool empty() noexcept {
-			if (addr == 0 || size == 0) {
-				return true;
-			}
-			return false;
+		uint64_t addr; 
+		DWORD size;
+        std::map<std::uintptr_t, DWORD> pages;
+        const bool empty() const noexcept {
+			return !addr || !size;
 		}
 	};
 
-	const std::uintptr_t FindPattern(const std::uintptr_t& base, const std::size_t& length, const BYTE*& pattern, const BYTE& mask);
+	const std::uintptr_t FindPattern(const std::uintptr_t& base, const std::size_t& length, const BYTE*&& pattern, const BYTE& mask = 0);
 	const std::uintptr_t FindPatternModule(const Module& module, const BYTE*&& pattern, const BYTE& mask = 0);
+    //const std::map<std::uintptr_t, unsigned long> GetModulePages(const Module& module);
 
+		//If PhysicalMode is Aktive ModuleName is not used because it only gets Gamebase! 
 	const Module GetModuleBase(const wchar_t* ModuleName = 0) {
 		if (bPhysicalMode) {
 			REQUEST_MAINBASE req;
@@ -118,12 +119,20 @@ public:
 			REQUEST_MODULE req;
 			uint64_t base = NULL;
 			DWORD size = NULL;
+            PAGE pages[0x20];
 			req.ProcessId = this->ProcessId;
 			req.OutAddress = (PBYTE*)&base;
 			req.OutSize = &size;
+            req.Pages = pages;
 			wcscpy_s(req.Module, sizeof(req.Module) / sizeof(req.Module[0]), ModuleName);
 			this->SendRequest(REQUEST_TYPE::MODULE, &req);
-			return { base, size };
+            std::map<std::uintptr_t, DWORD> map_pages;
+			for (int i = 0; i < 0x20; i++) {
+                if (!pages[i].empty()) {
+                    map_pages.emplace((std::uintptr_t)pages[i].Address, pages[i].Size);
+                }
+			}
+            return {base, size, map_pages};
 		}
 	}
 
@@ -139,6 +148,7 @@ private:
 		PROTECT,
 		ALLOC,
 		FREE,
+		//PAGES,
 		MODULE,
 		MAINBASE,
 		THREADCALL,
@@ -186,17 +196,33 @@ private:
 		PVOID Address;
 	} REQUEST_FREE, * PREQUEST_FREE;
 
+    typedef struct _PAGE {
+        void* Address;
+        DWORD Size;
+        const bool empty() const noexcept {
+            return !Address || !Size;
+        }
+    } PAGE, *PPAGE;
+
 	typedef struct _REQUEST_MODULE {
 		DWORD ProcessId;
 		WCHAR Module[0xFF];
 		PBYTE* OutAddress;
 		DWORD* OutSize;
+        PPAGE Pages;
 	} REQUEST_MODULE, * PREQUEST_MODULE;
 
 	typedef struct _REQUEST_MAINBASE {
 		DWORD ProcessId;
 		PBYTE* OutAddress;
 	} REQUEST_MAINBASE, * PREQUEST_MAINBASE;
+
+	//typedef struct _REQUEST_PAGES {
+ //       DWORD ProcessId;
+ //       PVOID ModuleBase;
+ //       DWORD ModuleSize;
+ //       PAGE (*Pages)[0x20];
+ //   } REQUEST_PAGES, *PREQUEST_PAGES;
 };
 
 static Driver* driver = new Driver;
