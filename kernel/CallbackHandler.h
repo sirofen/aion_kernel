@@ -40,7 +40,7 @@ typedef struct _REQUEST_READ {
 	DWORD ProcessId;
 	PVOID Dest;
 	PVOID Src;
-	DWORD Size;
+    ULONGLONG Size;
 	BOOL bPhysicalMem;
 } REQUEST_READ, * PREQUEST_READ;
 
@@ -73,6 +73,7 @@ typedef struct _REQUEST_MODULE {
 	WCHAR Module[0xFF];
 	PBYTE* OutAddress;
 	DWORD* OutSize;
+    bool ListPages;
 	PPAGE Pages;
 } REQUEST_MODULE, * PREQUEST_MODULE;
 
@@ -81,14 +82,12 @@ typedef struct _REQUEST_MAINBASE {
 	PBYTE* OutAddress;
 } REQUEST_MAINBASE, * PREQUEST_MAINBASE;
 
-
-
-typedef struct _REQUEST_PAGES {
-    DWORD ProcessId;
-    PVOID ModuleBase;
-    DWORD ModuleSize;
-    PAGE (*Pages)[0x20];
-} REQUEST_PAGES, *PREQUEST_PAGES;
+//typedef struct _REQUEST_PAGES {
+//    DWORD ProcessId;
+//    PVOID ModuleBase;
+//    DWORD ModuleSize;
+//    PAGE (*Pages)[0x20];
+//} REQUEST_PAGES, *PREQUEST_PAGES;
 
 NTSTATUS CallbackWRITE(PREQUEST_WRITE args);
 NTSTATUS CallbackREAD(PREQUEST_READ args);

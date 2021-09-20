@@ -39,22 +39,24 @@ public:
 		return status;
 	}
 
-	const NTSTATUS ReadMem(const ULONG_PTR& addr, void* _val, const DWORD sz) {
+	const NTSTATUS ReadMem(const ULONG_PTR& addr, void* _val, const ULONGLONG sz) {
 		REQUEST_READ req;
 		req.ProcessId = this->ProcessId;
 		req.Dest = _val;
 		req.Src = (PBYTE*)addr;
 		req.Size = sz;
+        req.bPhysicalMem = this->bPhysicalMode;
 		return this->SendRequest(REQUEST_TYPE::READ, &req);
 	}
 
 	template<typename T>
-    const NTSTATUS ReadMemType(const ULONG_PTR& addr, T& _val, const DWORD sz = sizeof(T)) {
+    const NTSTATUS ReadMemType(const ULONG_PTR& addr, T& _val, const ULONGLONG sz = sizeof(T)) {
         REQUEST_READ req;
         req.ProcessId = this->ProcessId;
         req.Dest = &_val;
         req.Src = (PBYTE*) addr;
         req.Size = sz;
+        req.bPhysicalMem = this->bPhysicalMode;
         return this->SendRequest(REQUEST_TYPE::READ, &req);
     }
 
@@ -95,16 +97,15 @@ public:
 		DWORD size;
         std::map<std::uintptr_t, DWORD> pages;
         const bool empty() const noexcept {
-			return !addr || !size;
+			return !addr && !size;
 		}
 	};
 
 	const std::uintptr_t FindPattern(const std::uintptr_t& base, const std::size_t& length, const BYTE*&& pattern, const BYTE& mask = 0);
-	const std::uintptr_t FindPatternModule(const Module& module, const BYTE*&& pattern, const BYTE& mask = 0);
+    const std::uintptr_t FindPatternModule(const Module& module, const BYTE*&& pattern, const std::size_t& sz_phys_mode = 0, const BYTE& mask = 0);
     //const std::map<std::uintptr_t, unsigned long> GetModulePages(const Module& module);
 
-		//If PhysicalMode is Aktive ModuleName is not used because it only gets Gamebase! 
-	const Module GetModuleBase(const wchar_t* ModuleName = 0) {
+	const Module GetModuleBase(const wchar_t* ModuleName = 0, bool ListPages = false) {
 		if (bPhysicalMode) {
 			REQUEST_MAINBASE req;
 			uint64_t base = NULL;
@@ -123,13 +124,16 @@ public:
 			req.ProcessId = this->ProcessId;
 			req.OutAddress = (PBYTE*)&base;
 			req.OutSize = &size;
+            req.ListPages = ListPages;
             req.Pages = pages;
 			wcscpy_s(req.Module, sizeof(req.Module) / sizeof(req.Module[0]), ModuleName);
 			this->SendRequest(REQUEST_TYPE::MODULE, &req);
             std::map<std::uintptr_t, DWORD> map_pages;
-			for (int i = 0; i < 0x20; i++) {
-                if (!pages[i].empty()) {
-                    map_pages.emplace((std::uintptr_t)pages[i].Address, pages[i].Size);
+			if (ListPages) {
+                for (int i = 0; i < 0x20; i++) {
+                    if (!pages[i].empty()) {
+                        map_pages.emplace((std::uintptr_t) pages[i].Address, pages[i].Size);
+                    }
                 }
 			}
             return {base, size, map_pages};
@@ -173,7 +177,7 @@ private:
 		DWORD ProcessId;
 		PVOID Dest;
 		PVOID Src;
-		DWORD Size;
+		ULONGLONG Size;
 		BOOL bPhysicalMem;
 	} REQUEST_READ, * PREQUEST_READ;
 
@@ -209,6 +213,7 @@ private:
 		WCHAR Module[0xFF];
 		PBYTE* OutAddress;
 		DWORD* OutSize;
+        bool ListPages;
         PPAGE Pages;
 	} REQUEST_MODULE, * PREQUEST_MODULE;
 

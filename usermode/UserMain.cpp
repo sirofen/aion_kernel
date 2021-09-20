@@ -32,11 +32,15 @@ int main() {
 		return -1;
 	}
 	wprintf(L"Success!\n");
+    wprintf(L"addr: 0x%llX, sz: %u\n", game_dll.addr, game_dll.size);
 	wprintf(L"[!] GAME.DLL base: 0x%llX\n", game_dll.addr);
-    return 0;
+
 	//auto base_addr_t = game_dll.addr + 0xDC8243 + 0xD;
 	wprintf(L"[!] Pattern search ...");						/*0xAFF000*/
-	auto base_addr_t = driver->FindPatternModule(game_dll, AION::GAMEDLL::target::pointer_pattern)/*+ AION::GAMEDLL::target::pattern_offset*/;
+    //auto base_addr_t = driver->FindPattern(game_dll.addr + 0x90000, game_dll.size, AION::GAMEDLL::target::pointer_pattern) /*+ AION::GAMEDLL::target::pattern_offset*/;
+	auto base_addr_t = driver->FindPatternModule(game_dll, AION::GAMEDLL::target::pointer_pattern);
+	//game dll size dec 28667904
+    //auto base_addr_t = game_dll.addr + 0x217;
 	/*9E44A0*/
 	/*camel 0x4DD9824A*/
 	if (base_addr_t == 0) {
@@ -46,16 +50,16 @@ int main() {
 	wprintf_s(L"Found: { 0x%llX }\n", base_addr_t);
 	//auto base_addr_t = game_dll.addr + 0xB45EAC - 0x8;
 	wprintf(L"[!] addr to read: 0x%llX\n", base_addr_t);
-	constexpr size_t read_sz = 30;
+	constexpr size_t read_sz = 40;
 
 	BYTE prev_bytes[read_sz];
 	BYTE new_bytes[read_sz];
 
 	std::uintptr_t ptr_cache[2] = {0, 0};
 	std::uintptr_t _addr_t = 0;
-	while(false)
-	//while (!GetAsyncKeyState(VK_F12))
+	while (!GetAsyncKeyState(VK_F12))
 	{
+        Sleep(100);
 		//if (driver->ReadMemType(base_addr_t, new_bytes, read_sz) != STATUS_SUCCESS
 		//	|| (memcmp(prev_bytes, new_bytes, read_sz) == 0)) {
 		//	continue;
@@ -64,15 +68,15 @@ int main() {
 		//memcpy(prev_bytes, new_bytes, read_sz);
 
 		/* can't use just ! 'cos there's lambda declaration in front */
-		//if (POINTER(base_addr_t, 0x2, _addr_t, 4, ptr_cache, 0, true) == false) {
-		//	continue;
-		//}
+        if (POINTER(base_addr_t, 0x2, _addr_t, 4, ptr_cache, 0, true) == false) {
+			continue;
+		}
 
-		//if (POINTER(_addr_t, 0x254, _addr_t, 4, ptr_cache, 1, false) == false) {
-		//	continue;
-		//}
-		//_addr_t += 0x3A
-		if (driver->ReadMemType(base_addr_t, new_bytes, read_sz) != STATUS_SUCCESS
+		if (POINTER(_addr_t, 0x254, _addr_t, 4, ptr_cache, 1, false) == false) {
+			continue;
+		}
+        _addr_t += 0x3A;
+        if (driver->ReadMemType(_addr_t, new_bytes, read_sz) != STATUS_SUCCESS
 			|| (memcmp(prev_bytes, new_bytes, read_sz) == 0)) {
 			continue;
 		}
@@ -83,8 +87,6 @@ int main() {
 //		wprintf(L"\nWIDE: {%s}\n", new_bytes);
 
 		memcpy(prev_bytes, new_bytes, read_sz);
-
-		Sleep(100);
 	}
 	return 0;
 }

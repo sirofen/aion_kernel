@@ -61,9 +61,6 @@ NTSTATUS CallbackREAD(PREQUEST_READ args)
 
 		return STATUS_ACCESS_VIOLATION;
 	}
-    __try {
-
-
 	if (args->bPhysicalMem) {
 		PEPROCESS pProcess = NULL;
 		if (args->ProcessId == 0) return STATUS_UNSUCCESSFUL;
@@ -76,10 +73,11 @@ NTSTATUS CallbackREAD(PREQUEST_READ args)
 
 		SIZE_T CurOffset = 0;
 		SIZE_T TotalSize = args->Size;
-		while (TotalSize)
+        PRINT_TRACE("Physical memory to read sz: %llu", TotalSize);
+        while (TotalSize > 0)
 		{
-
 			INT64 CurPhysAddr = Utils::PhysicalMemory::TranslateLinearAddress(process_dirbase, (ULONG64)args->Src + CurOffset);
+            PRINT_TRACE("CurPhysAddr: 0x%llX", CurPhysAddr);
 			if (!CurPhysAddr) return STATUS_UNSUCCESSFUL;
 
 			ULONG64 ReadSize = min(PAGE_SIZE - (CurPhysAddr & 0xFFF), TotalSize);
@@ -87,6 +85,7 @@ NTSTATUS CallbackREAD(PREQUEST_READ args)
 			NtRet = Utils::PhysicalMemory::ReadPhysicalAddress(PVOID(CurPhysAddr), (PVOID)((ULONG64)args->Dest + CurOffset), ReadSize, &BytesRead);
 			TotalSize -= BytesRead;
 			CurOffset += BytesRead;
+            PRINT_TRACE("Phys mem read sz: %llu", BytesRead);
 			if (NtRet != STATUS_SUCCESS) break;
 			if (BytesRead == 0) break;
 		}
@@ -104,11 +103,6 @@ NTSTATUS CallbackREAD(PREQUEST_READ args)
 		return status;
 	}
 	return STATUS_UNSUCCESSFUL;
-
-
-    } __except(EXCEPTION_CONTINUE_EXECUTION) {
-        PRINT_ERROR("ERR CODE: %u", GetExceptionCode());
-	}
 }
 
 _IRQL_requires_max_(APC_LEVEL)
@@ -233,6 +227,27 @@ NTSTATUS CallbackFREE(PREQUEST_FREE args)
 //    return page_iter > 0 ? STATUS_SUCCESS : STATUS_NOT_FOUND;
 //}
 
+NTSTATUS ListPages(PVOID base, DWORD size,  PAGE* const& pages) {
+    MEMORY_BASIC_INFORMATION mem_basic_inf = {0};
+
+    DWORD page_iter = 0;
+    for (auto cur_page_addr = (UINT_PTR) base; cur_page_addr < (UINT_PTR) base + size; cur_page_addr = (ULONG_PTR) mem_basic_inf.BaseAddress + mem_basic_inf.RegionSize) {
+        if (ZwQueryVirtualMemory(ZwCurrentProcess(), (PVOID) ((UINT_PTR) cur_page_addr), MemoryBasicInformation, &mem_basic_inf, sizeof(mem_basic_inf), NULL) != STATUS_SUCCESS) {
+            return STATUS_UNSUCCESSFUL;
+        }
+        if (mem_basic_inf.State == MEM_COMMIT && mem_basic_inf.Protect != PAGE_NOACCESS && !(mem_basic_inf.Protect & PAGE_GUARD)) {
+            PRINT_DEBUG("[!] Accessible page - base: 0x%p, sz: %lu", mem_basic_inf.BaseAddress, mem_basic_inf.RegionSize);
+            pages[page_iter++] = {mem_basic_inf.BaseAddress, (DWORD) mem_basic_inf.RegionSize};
+        }
+        PRINT_TRACE("[!] ALL PAGES - base: 0x%p, sz: %lu, state: %lu, protect: %lu",
+                    mem_basic_inf.BaseAddress,
+                    mem_basic_inf.RegionSize,
+                    mem_basic_inf.State,
+                    mem_basic_inf.Protect);
+    }
+    return STATUS_SUCCESS;
+}
+
 _IRQL_requires_max_(APC_LEVEL)
 NTSTATUS CallbackMODULE(PREQUEST_MODULE args)
 {
@@ -249,23 +264,10 @@ NTSTATUS CallbackMODULE(PREQUEST_MODULE args)
             base = module_entry->Base;
             size = module_entry->Size;
 			PRINT_DEBUG("[!] %S - base: 0x%p, sz: %u", args->Module, base, size);
-			MEMORY_BASIC_INFORMATION mem_basic_inf = { 0 };
 
-            DWORD page_iter = 0;
-			for (auto cur_page_addr = (UINT_PTR)base; cur_page_addr < (UINT_PTR)base + size; cur_page_addr = (ULONG_PTR)mem_basic_inf.BaseAddress + mem_basic_inf.RegionSize) {
-				if (ZwQueryVirtualMemory(ZwCurrentProcess(), (PVOID)((UINT_PTR)cur_page_addr), MemoryBasicInformation, &mem_basic_inf, sizeof(mem_basic_inf), NULL) != STATUS_SUCCESS) {
-					return STATUS_UNSUCCESSFUL;
-				}
-				if (mem_basic_inf.State == MEM_COMMIT && mem_basic_inf.Protect != PAGE_NOACCESS && !(mem_basic_inf.Protect & PAGE_GUARD)) {
-					PRINT_DEBUG("[!] Accessible page - base: 0x%p, sz: %lu", mem_basic_inf.BaseAddress, mem_basic_inf.RegionSize);
-                    pages[page_iter++] = {mem_basic_inf.BaseAddress, (DWORD) mem_basic_inf.RegionSize};
-				}
-                PRINT_TRACE("[!] ALL PAGES - base: 0x%p, sz: %lu, state: %lu, protect: %lu",
-                            mem_basic_inf.BaseAddress,
-                            mem_basic_inf.RegionSize,
-                            mem_basic_inf.State,
-                            mem_basic_inf.Protect);
-            }
+			if (args->ListPages) {
+                status = ListPages(base, size, pages);
+			}
 
         } else {
             status = STATUS_NOT_FOUND;
