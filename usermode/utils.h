@@ -1,5 +1,32 @@
 #pragma once
 
+inline void _print_bytes_line(const BYTE*&& arr, std::uintptr_t base, const BYTE& n_lm_l, const char delim) {
+    for (std::size_t i = 0, arr_sz = sizeof(arr); i < arr_sz; i++) {
+        bool last_iter = (i + 1) == arr_sz;
+        if (i % n_lm_l == 0 || last_iter) {
+            std::size_t iter_sz_part;
+            if (last_iter) {
+                iter_sz_part = i - arr_sz % n_lm_l + 1;
+                wprintf_s(L"%02X%c", arr[i], delim);
+                std::wcout << std::wstring((n_lm_l - (arr_sz % n_lm_l)) * 3, L' ');
+            } else {
+                iter_sz_part = i - n_lm_l;
+            }
+            for (std::size_t j = 0; i != 0 && j < n_lm_l && j + iter_sz_part < arr_sz; j++) {
+                const auto& _c = arr[j + iter_sz_part];
+                wprintf_s(j == 0 ? L"\t%C" : L"%C", std::isgraph(_c) || _c == 0x20 ? _c : '.');
+            }
+            if (!last_iter) {
+                wprintf_s(L"\n0x%llX:\t", base + i);
+            }
+        }
+        if (!last_iter) {
+            wprintf_s(L"%02X%c", arr[i], delim);
+        }
+    }
+    wprintf_s(L"\n");
+}
+
 //https://stackoverflow.com/a/33447587/14073801
 template<typename I>
 std::string to_hex_string(I w, size_t hex_len = sizeof(I) << 1) {

@@ -92,7 +92,9 @@ int main() {
         _y_pos_old = _y_pos;
         _x_pos_old = _x_pos;
 
-        //print_bytes_line(new_bytes, _addr_t, 16, " ");
+		driver->ReadMemType(_addr_t + AION::GAMEDLL::target::pos::z_cord, new_bytes, read_sz);
+
+        print_bytes_line(new_bytes, _addr_t, 16, " ");
 		//driver->dump_memory(_addr_t, 1024 * 1024 * 10);
 
         //wprintf_s(L"\nWIDE: {%s}\n", new_bytes);
