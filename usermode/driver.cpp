@@ -1,13 +1,44 @@
 #include "stdafx.h"
 #include "driver.h"
 
+#include <fstream>
+
+#define BUFSIZE MAX_PATH
+void write_file(const BYTE* const& buffer, const std::size_t& length, const wchar_t*&& prefix = L"") {
+    TCHAR dir_buffer[BUFSIZE];
+    GetCurrentDirectory(BUFSIZE, dir_buffer);
+    PathAppend(dir_buffer, L"dump");
+    CreateDirectory(dir_buffer, NULL);
+    SYSTEMTIME time;
+    GetSystemTime(&time);
+    wchar_t _filebane_char_buf[BUFSIZE];
+    swprintf_s(_filebane_char_buf, L"%s\\%s__%u-%u-%u_%u-%u-%u.bin", dir_buffer, prefix, time.wYear, time.wMonth, time.wDay, time.wHour, time.wMinute, time.wSecond);
+    wprintf_s(L"%s", _filebane_char_buf);
+    std::ofstream buf_file(_filebane_char_buf, std::ios::binary | std::ios::out);
+    buf_file.write((char*) buffer, length);
+    buf_file.close();
+}
+
+void Driver::dump_memory(std::uintptr_t base, std::size_t length, const wchar_t*&& prefix) {
+    BYTE* buffer = new BYTE[length]();
+    if (this->ReadMem(base, buffer, length) != STATUS_SUCCESS) {
+        delete[] buffer;
+        return;
+    }
+    write_file(buffer, length, std::move(prefix));
+}
+
 const std::uintptr_t Driver::FindPattern(const std::uintptr_t& base, const std::size_t& length, const BYTE*&& pattern, const BYTE& mask) {
 	//wprintf_s(L"Searching - base: 0x%llx, length: %d ", base, length);
     BYTE* buffer = new BYTE[length]();
 	if (this->ReadMem(base, buffer, length) != STATUS_SUCCESS) {
 		delete[] buffer;
+        wprintf_s(L"Find Pattern error\n");
 		return 0;
 	}
+#ifdef AION_KERNEL_DEBUG_SAVE_PATTERN_BUFFER
+    write_file(buffer, length, L"module");
+#endif
 	const auto& pattern_i_max = sizeof(pattern) - 1;
 	std::size_t pattern_i = 0;
 	for (std::size_t i = 0; i < length; i++) {

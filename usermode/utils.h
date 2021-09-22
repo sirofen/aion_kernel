@@ -1,5 +1,23 @@
 #pragma once
 
+//https://stackoverflow.com/a/33447587/14073801
+template<typename I>
+std::string to_hex_string(I w, size_t hex_len = sizeof(I) << 1) {
+    static const char* digits = "0123456789ABCDEF";
+    std::string rc(hex_len, '0');
+    for (size_t i = 0, j = (hex_len - 1) * 4; i < hex_len; ++i, j -= 4)
+        rc[i] = digits[(w >> j) & 0x0f];
+    return rc;
+}
+template<typename I>
+std::wstring to_hex_wstring(I w, size_t hex_len = sizeof(I) << 1) {
+    static const char* digits = "0123456789ABCDEF";
+    std::wstring rc(hex_len, '0');
+    for (size_t i = 0, j = (hex_len - 1) * 4; i < hex_len; ++i, j -= 4)
+        rc[i] = digits[(w >> j) & 0x0f];
+    return rc;
+}
+
 typedef enum _KEY_VALUE_INFORMATION_CLASS {
 	KeyValueBasicInformation,
 	KeyValueFullInformation,

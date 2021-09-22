@@ -1,4 +1,5 @@
 #pragma once
+//#define AION_KERNEL_DEBUG_SAVE_PATTERN_BUFFER
 
 class Driver
 {
@@ -38,6 +39,27 @@ public:
 		FlushFileBuffers(this->hDriver);
 		return status;
 	}
+
+	const NTSTATUS WriteMem(const ULONG_PTR& addr, void* _val, const ULONGLONG sz) {
+        REQUEST_WRITE req;
+        req.ProcessId = this->ProcessId;
+        req.Src = _val;
+        req.Dest = (PVOID)addr;
+        req.Size = sz;
+        req.bPhysicalMem = this->bPhysicalMode;
+		return this->SendRequest(REQUEST_TYPE::WRITE, &req);
+	}
+
+    template<typename T>
+	const NTSTATUS WriteMemType(const ULONG_PTR& addr, T& _val, const ULONGLONG sz = sizeof(T)) {
+        REQUEST_WRITE req;
+        req.ProcessId = this->ProcessId;
+        req.Src = &_val;
+        req.Dest = (PVOID) addr;
+        req.Size = sz;
+        req.bPhysicalMem = this->bPhysicalMode;
+        return this->SendRequest(REQUEST_TYPE::WRITE, &req);
+    }
 
 	const NTSTATUS ReadMem(const ULONG_PTR& addr, void* _val, const ULONGLONG sz) {
 		REQUEST_READ req;
@@ -140,6 +162,7 @@ public:
 		}
 	}
 
+	void dump_memory(std::uintptr_t base_addr, std::size_t size, const wchar_t*&& prefix = L"");
 
 private:
 	PVOID SharedBuffer;

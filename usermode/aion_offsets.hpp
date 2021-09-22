@@ -1,16 +1,35 @@
 #pragma once
 #include <windef.h>
 
+
+
 namespace AION {
-	constexpr LPCWSTR aion_bin = L"AION.bin";
+	constexpr LPCWSTR aion_bin = L"Aion.bin";
 	namespace GAMEDLL {
 		constexpr LPCWSTR module_name = L"Game.dll";
 		namespace target {
-			constexpr BYTE pointer_pattern[] = { 0x3E, 0x9A, 0x99, 0x99, 0x3E, 0x9A, 0x99, 0x99, 0x3E, 0x00, 0x00 };
-			//constexpr BYTE pointer_pattern[] = {0x70, 0x75, 0x6e, 0x70, 0x63, 0x6b, 0x68, 0x77, 0x64, 0x76, 0x6d, 0x64, 0x65, 0x6f};
-			constexpr BYTE pattern_offset = 0x22;
+			constexpr BYTE pointer_pattern[] = {0x9A, 0x99, 0x99, 0x3E, 0x9A, 0x99, 0x99, 0x3E, 0x9A, 0x99, 0x99, 0x3E, 0x00, 0x00};
+            constexpr BYTE pattern_offset = 0x9;
+
+			constexpr DWORD pointer_1 = 0xDC8250;
+            constexpr WORD pointer_2 = 0x368;
+
+            constexpr BYTE name = 0x46;
+			constexpr BYTE lvl = 0x42;
+            constexpr WORD gravity = 0x8D8;
+			constexpr WORD attack_speed = 0x4FA;
+            constexpr WORD speed = 0x6CC; /*0x3C*/
+
+			namespace pos {
+				constexpr WORD pointer_2_pos = 0x180;
+				constexpr BYTE z_cord = 0xA0;
+				constexpr BYTE y_cord = 0x9C;
+				constexpr BYTE x_cord = 0x98;
+			}
 		}
-		constexpr DWORD chat_addr = 0xC19B45;
-		constexpr WORD chat_size = 0x1FF; /* exceeds max length by 1 for null terminator */
-	};
+	};// namespace GAMEDLL
+	namespace CRY3DENGINE {
+		constexpr LPCWSTR module_name = L"Cry3DEngine.dll";
+		constexpr DWORD radar = 0x26BF68;
+	}
 };

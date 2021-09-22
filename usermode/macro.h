@@ -1,8 +1,7 @@
 
 #define print_bytes(ARRAY, DELIM) for (const auto& _c : ARRAY) { wprintf_s(L"%02X"##DELIM, _c); } wprintf_s(L"\n")
 #define print_bytes_line(ARRAY, START_ADDRESS, N_ELEMENTS_IN_LINE, DELIM)													\
-	const auto& arr_sz = sizeof(ARRAY);																						\
-	for (std::size_t i = 0; i < arr_sz; i++) {																				\
+	for (std::size_t i = 0, arr_sz = sizeof(ARRAY); i < arr_sz; i++) {														\
 		auto last_iter = (i + 1) == arr_sz;																					\
 		if (i % N_ELEMENTS_IN_LINE == 0 || last_iter) {																		\
 		std::size_t iter_sz_part;																							\
