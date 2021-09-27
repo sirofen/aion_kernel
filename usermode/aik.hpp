@@ -12,7 +12,6 @@ Gui modifies shared memory value.
 */
 class aik {
     aik();
-    void init_shared_memory();
-    int read_client_values_into_shared();
-    void process_shared_memory();
+    int read_client_values();
+    int read_front_values();
 };

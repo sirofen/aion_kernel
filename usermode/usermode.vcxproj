@@ -148,6 +148,8 @@
   <ItemGroup>
     <ClCompile Include="aik.cpp" />
     <ClCompile Include="driver.cpp" />
+    <ClCompile Include="shared_memory.cpp" />
+    <ClCompile Include="shared_mutex.cpp" />
     <ClCompile Include="UserMain.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -156,6 +158,8 @@
     <ClInclude Include="aion_offsets.hpp" />
     <ClInclude Include="driver.h" />
     <ClInclude Include="macro.h" />
+    <ClInclude Include="shared_memory.hpp" />
+    <ClInclude Include="shared_mutex.hpp" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>

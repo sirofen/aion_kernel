@@ -1,13 +1,16 @@
 #pragma once
+#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
-#include <iostream>
 #include <winternl.h>
 #include <ntstatus.h>
+#include <TlHelp32.h>
+#include <shlwapi.h>
+#include <strsafe.h>
+
+#include <iostream>
 #include <atomic>
 #include <mutex>
 #include <map>
-#include <TlHelp32.h>
-#include <shlwapi.h>
 
 #include <utils.h>
 #include <driver.h>
