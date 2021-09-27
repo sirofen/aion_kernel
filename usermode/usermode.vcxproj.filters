@@ -21,6 +21,9 @@
     <ClCompile Include="driver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="aik.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -36,6 +39,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="aion_offsets.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="aik.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="aik_types.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

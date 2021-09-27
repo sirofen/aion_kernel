@@ -1,7 +1,4 @@
 #pragma once
-#include <windef.h>
-
-
 
 namespace AION {
 	constexpr LPCWSTR aion_bin = L"Aion.bin";
