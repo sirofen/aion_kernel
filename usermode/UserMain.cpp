@@ -5,7 +5,7 @@
 
 #include <macro.h>
 
-int main() {
+int main_old() {
 	//setlocale(LC_CTYPE, "rus");
 	_setmode(_fileno(stdout), _O_U16TEXT);
 
