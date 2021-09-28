@@ -147,6 +147,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="aik.cpp" />
+    <ClCompile Include="aik_types.cpp" />
     <ClCompile Include="driver.cpp" />
     <ClCompile Include="shared_memory.cpp" />
     <ClCompile Include="shared_mutex.cpp" />
@@ -157,6 +158,8 @@
     <ClInclude Include="aik_types.hpp" />
     <ClInclude Include="aion_offsets.hpp" />
     <ClInclude Include="driver.h" />
+    <ClInclude Include="err.hpp" />
+    <ClInclude Include="global_vars.hpp" />
     <ClInclude Include="macro.h" />
     <ClInclude Include="shared_memory.hpp" />
     <ClInclude Include="shared_mutex.hpp" />

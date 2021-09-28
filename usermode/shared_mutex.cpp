@@ -1,7 +1,14 @@
 #include <shared_mutex.hpp>
 
 shared_mutex::shared_mutex(LPCTSTR name)
-    : m_name(name) {}
+    : m_name(name)
+    , m_handle(0) {}
+
+shared_mutex::~shared_mutex() {
+    if (!CloseHandle(m_handle)) {
+        display_error("Close mutex handle error");
+    }
+}
 
 shared_mutex* shared_mutex::create_mutex(
         LPSECURITY_ATTRIBUTES security_attr,
@@ -23,7 +30,7 @@ shared_mutex* shared_mutex::open_mutex(
     return this;
 }
 
-const HANDLE shared_mutex::operator()() const {
+HANDLE shared_mutex::operator()() const {
     if (m_handle == NULL) {
         RaiseException(EXCEPTION_INVALID_HANDLE, 0, NULL, NULL);
     }

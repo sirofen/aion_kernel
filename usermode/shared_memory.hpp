@@ -5,6 +5,7 @@
 class shared_memory {
 public:
     explicit shared_memory(LPCTSTR name, HANDLE mutex);
+    ~shared_memory();
 
     shared_memory* create_file_mapping(HANDLE hFile,
                                        LPSECURITY_ATTRIBUTES lpFileMappingAttributes,
@@ -21,11 +22,12 @@ public:
                   DWORD dwFileOffsetLow,
                   SIZE_T dwNumberOfBytesToMap);
 
-    const LPVOID read_value(BYTE offset = 0) const;
+    const LPVOID value_pointer(BYTE offset = 0) const;
 
     template<typename T>
-    T read_value_typed(BYTE offset = 0) { 
-        return *read_value(offset);
+    T read_value_typed(BYTE offset = 0) {
+        T _pval = *(T*)value_pointer(offset);
+        return _pval;
     }
 
 

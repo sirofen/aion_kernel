@@ -15,6 +15,10 @@
 #include <utils.h>
 #include <driver.h>
 
+#include <aik.hpp>
+#include <aik_types.hpp>
+#include <err.hpp>
+
 #include <aion_offsets.hpp>
 
 #pragma comment(lib, "ntdll.lib")

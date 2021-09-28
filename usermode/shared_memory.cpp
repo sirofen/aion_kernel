@@ -2,7 +2,15 @@
 
 shared_memory::shared_memory(LPCTSTR name, HANDLE mutex)
     : m_name(name)
-    , m_hmutex(mutex) {}
+    , m_hmutex(mutex)
+    , m_mapped_addr(0)
+    , m_handle(0) {}
+
+shared_memory::~shared_memory() {
+    if (!UnmapViewOfFile(m_mapped_addr)) {
+        display_error("Unmap view of file error");
+    }
+}
 
 shared_memory* shared_memory::create_file_mapping(HANDLE hFile,
                                                   LPSECURITY_ATTRIBUTES lpFileMappingAttributes,
@@ -53,7 +61,7 @@ void shared_memory::map_view(DWORD dwDesiredAccess,
                                        dwNumberOfBytesToMap);
             } __finally {
                 if (!ReleaseMutex(m_hmutex)) {
-                    display_error("Release mutex error\n");
+                    display_error("Release mutex error");
                 }
             }
             break;
@@ -64,7 +72,7 @@ void shared_memory::map_view(DWORD dwDesiredAccess,
     }
 }
 
-const LPVOID shared_memory::read_value(BYTE offset) const {
+const LPVOID shared_memory::value_pointer(BYTE offset) const {
     if (m_mapped_addr == 0x0) {
         throw 0;
     }

@@ -36,6 +36,9 @@
     <ClCompile Include="shared_mutex.cpp">
       <Filter>Source Files\shd</Filter>
     </ClCompile>
+    <ClCompile Include="aik_types.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -64,6 +67,12 @@
     </ClInclude>
     <ClInclude Include="shared_mutex.hpp">
       <Filter>Header Files\shd</Filter>
+    </ClInclude>
+    <ClInclude Include="err.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="global_vars.hpp">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
