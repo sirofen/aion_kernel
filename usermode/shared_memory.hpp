@@ -20,14 +20,22 @@ public:
                   DWORD dwFileOffsetLow,
                   SIZE_T dwNumberOfBytesToMap);
 
-    const LPVOID value_pointer(BYTE offset = 0) const;
+    const LPVOID value_pointer(const DWORD& offset = 0) const;
 
     template<typename T>
-    T read_value_typed(BYTE offset = 0) {
+    T read_value_typed(const ULONG& offset = 0, const ULONG& sz = sizeof(T)) {
+        WaitForSingleObject(m_hmutex, INFINITE);
         T _pval = *(T*)value_pointer(offset);
+        ReleaseMutex(m_hmutex);
         return _pval;
     }
 
+    template<typename T>
+    void write_value_typed(const T& _val, const ULONG& sz = sizeof(T)) {
+        WaitForSingleObject(m_hmutex, INFINITE);
+        CopyMemory(m_mapped_addr, &_val, sz);
+        ReleaseMutex(m_hmutex);
+    }
 
     const LPCTSTR get_name() const noexcept;
 

@@ -14,7 +14,7 @@ public:
     int read_client_values();
     int write_client_values();
 
-    int read_shared_values();
+    int read_shared_values(DISPATCH_SHARED& _pdispatch_shared_struct);
     int write_shared_values(const DISPATCH_SHARED& _pdispatch_shared_struct);
 
     bool init_shared_mutex(LPCTSTR name, AIK_INIT_APPROACH init_appr);

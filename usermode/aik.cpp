@@ -10,10 +10,20 @@ void aik::debug_print(const wchar_t* _str, unsigned short sz) {
     this->write_shared_values(_aik_read_struct.contruct_dispatch());
 }
 
+int aik::read_shared_values(DISPATCH_SHARED& _pdispatch_shared_struct) {
+    _pdispatch_shared_struct.m_aik_read = 
+        std::make_unique<AIK_READ>(m_shared_memory->read_value_typed<AIK_READ>((ULONG) DISPATCH_SHARED::aik_read_offset));
+    _pdispatch_shared_struct.m_aik_write = 
+        std::make_unique<AIK_WRITE>(m_shared_memory->read_value_typed<AIK_WRITE>((ULONG) DISPATCH_SHARED::aik_write_offset));
+    return 0;
+}
+
 int aik::write_shared_values(const DISPATCH_SHARED& _pdispatch_shared_struct) {
-    if (_pdispatch_shared_struct.m_paik_read) {
+    if (_pdispatch_shared_struct.m_aik_read) {
+        m_shared_memory->write_value_typed<AIK_READ>(*_pdispatch_shared_struct.m_aik_read);
     }
-    if (_pdispatch_shared_struct.m_paik_write) {
+    if (_pdispatch_shared_struct.m_aik_write) {
+        m_shared_memory->write_value_typed<AIK_WRITE>(*_pdispatch_shared_struct.m_aik_write);
     }
     return 0;
 }

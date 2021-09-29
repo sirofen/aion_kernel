@@ -73,7 +73,7 @@ void shared_memory::map_view(DWORD dwDesiredAccess,
     }
 }
 
-const LPVOID shared_memory::value_pointer(BYTE offset) const {
+const LPVOID shared_memory::value_pointer(const ULONG& offset) const {
     if (m_mapped_addr == 0x0) {
         throw 0;
     }
