@@ -77,7 +77,7 @@ const LPVOID shared_memory::value_pointer(BYTE offset) const {
     if (m_mapped_addr == 0x0) {
         throw 0;
     }
-    return (LPVOID)((unsigned)m_mapped_addr + offset);
+    return (LPVOID)((unsigned long long)m_mapped_addr + offset);
 }
 
 const LPCTSTR shared_memory::get_name() const noexcept {
