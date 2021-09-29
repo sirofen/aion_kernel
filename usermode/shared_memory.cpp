@@ -2,8 +2,8 @@
 #include <shared_memory.hpp>
 
 shared_memory::shared_memory(LPCTSTR name, HANDLE mutex)
-    : m_name(name)
-    , m_hmutex(mutex)
+    : m_name(std::move(name))
+    , m_hmutex(std::move(mutex))
     , m_mapped_addr(0)
     , m_handle(0) {}
 

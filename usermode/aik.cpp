@@ -23,7 +23,7 @@ bool aik::init_shared_mutex(LPCTSTR name, AIK_INIT_APPROACH init_appr) {
     if (m_shared_mutex) {
         return false;
     }
-    m_shared_mutex = std::make_unique<shared_mutex>(shared_mutex(name));
+    m_shared_mutex = std::make_unique<shared_mutex>(shared_mutex(std::move(name)));
     if (!m_shared_mutex) {
         return false;
     }

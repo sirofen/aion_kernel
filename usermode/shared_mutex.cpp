@@ -2,7 +2,7 @@
 #include <shared_mutex.hpp>
 
 shared_mutex::shared_mutex(LPCTSTR name)
-    : m_name(name)
+    : m_name(std::move(name))
     , m_handle(0) {}
 
 shared_mutex::~shared_mutex() {
