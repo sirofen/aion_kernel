@@ -17,4 +17,7 @@ constexpr BOOL create_sm_bInitialOwner = FALSE;
 // open
 constexpr DWORD open_sm_dwDesiredAccess = MUTEX_ALL_ACCESS;
 constexpr BOOL open_sm_bInheritHandle = FALSE;
+/* driver */ 
+// mode
+constexpr BOOL driver_mode = FALSE;
 }// namespace AIK_GLOBAL_SETTINGS

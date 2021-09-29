@@ -1,6 +1,7 @@
+#include <stdafx.h>
 #include <shared_mutex.hpp>
 
-shared_mutex::shared_mutex(LPCTSTR& name)
+shared_mutex::shared_mutex(LPCTSTR name)
     : m_name(name)
     , m_handle(0) {}
 

@@ -1,10 +1,6 @@
+#include <stdafx.h>
 #include <aik.hpp>
 #include <global_vars.hpp>
-#include <shared_memory.hpp>
-#include <strsafe.h>
-//#include <stdafx.h>
-#include <cstring>
-#include <stdio.h>
 
 aik::aik() {}
 

@@ -1,6 +1,4 @@
 #pragma once
-#include <shared_mutex.hpp>
-#include <stdafx.h>
 
 class shared_memory {
 public:

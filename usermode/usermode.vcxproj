@@ -78,9 +78,11 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -149,6 +151,7 @@
     <ClCompile Include="aik.cpp" />
     <ClCompile Include="aik_types.cpp" />
     <ClCompile Include="driver.cpp" />
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="shared_memory.cpp" />
     <ClCompile Include="shared_mutex.cpp" />
     <ClCompile Include="UserMain.cpp" />

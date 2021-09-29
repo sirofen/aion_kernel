@@ -1,3 +1,4 @@
+#include <stdafx.h>
 #include <shared_memory.hpp>
 
 shared_memory::shared_memory(LPCTSTR name, HANDLE mutex)
