@@ -4,7 +4,6 @@ struct _DISPATCH_SHARED;
 typedef _DISPATCH_SHARED DISPATCH_SHARED, *PDISPATCH_SHARED;
 
 struct _AIK_READ {
-    //_AIK_READ();
     DISPATCH_SHARED contruct_dispatch();
     const static unsigned long size() noexcept;
     wchar_t name[32];
@@ -22,7 +21,6 @@ struct _AIK_READ {
 typedef _AIK_READ AIK_READ, *PAIK_READ;
 
 struct _AIK_WRITE {
-    //_AIK_WRITE();
     DISPATCH_SHARED contruct_dispatch();
     const static unsigned long size() noexcept;
     bool gravity;
@@ -37,8 +35,7 @@ struct _AIK_WRITE {
 typedef _AIK_WRITE AIK_WRITE, *PAIK_WRITE;
 
 struct _DISPATCH_SHARED {
-    //_DISPATCH_SHARED(PAIK_READ _pa_r = 0, PAIK_WRITE _wa_r = 0)
-    _DISPATCH_SHARED(std::unique_ptr<_AIK_READ> _aik_read,
+    _DISPATCH_SHARED(std::unique_ptr<_AIK_READ> _aik_read = nullptr,
                      std::unique_ptr<_AIK_WRITE> _aik_write = nullptr);
     const static unsigned long size() noexcept;
     const static unsigned char aik_read_offset() noexcept;

@@ -17,6 +17,10 @@ constexpr BOOL create_sm_bInitialOwner = FALSE;
 // open
 constexpr DWORD open_sm_dwDesiredAccess = MUTEX_ALL_ACCESS;
 constexpr BOOL open_sm_bInheritHandle = FALSE;
+/* map view */
+constexpr DWORD mapview_dwDesiredAccess = FILE_MAP_ALL_ACCESS;
+constexpr DWORD mapview_dwFileOffsetHigh = 0;
+constexpr DWORD mapview_dwFileOffsetLow = 0;
 /* driver */ 
 // mode
 constexpr BOOL driver_mode = FALSE;

@@ -2,7 +2,7 @@
 
 class shared_memory {
 public:
-    explicit shared_memory(LPCTSTR name, HANDLE mutex);
+    explicit shared_memory(const LPCTSTR& name, const HANDLE& mutex);
     ~shared_memory();
 
     shared_memory* create_file_mapping(HANDLE hFile,
@@ -33,6 +33,7 @@ public:
     template<typename T>
     void write_value_typed(const T& _val, const ULONG& sz = sizeof(T)) {
         WaitForSingleObject(m_hmutex, INFINITE);
+        //printf("mapped addr: 0x%p", m_mapped_addr);
         CopyMemory(m_mapped_addr, &_val, sz);
         ReleaseMutex(m_hmutex);
     }

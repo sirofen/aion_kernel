@@ -1,11 +1,11 @@
 #include <stdafx.h>
 #include <shared_memory.hpp>
 
-shared_memory::shared_memory(LPCTSTR name, HANDLE mutex)
-    : m_name(std::move(name))
-    , m_hmutex(std::move(mutex))
-    , m_mapped_addr(0)
-    , m_handle(0) {}
+shared_memory::shared_memory(const LPCTSTR& name, const HANDLE& mutex)
+    : m_handle()
+    , m_name(name)
+    , m_hmutex(mutex)
+    , m_mapped_addr() {}
 
 shared_memory::~shared_memory() {
     if (!UnmapViewOfFile(m_mapped_addr)) {
@@ -27,6 +27,7 @@ shared_memory* shared_memory::create_file_mapping(HANDLE hFile,
     if (m_handle == NULL) {
         display_error("Create file mapping error");
     }
+    //std::printf("mapping: 0x%p\n", m_handle);
     return this;
 }
 
@@ -48,6 +49,7 @@ void shared_memory::map_view(DWORD dwDesiredAccess,
         RaiseException(EXCEPTION_INVALID_HANDLE, 0, NULL, NULL);
         return;
     }
+    //std::printf("mapping: 0x%p\n", m_handle);
     DWORD dw_wait_res;
     //for (int i = 0; i < 20; i++) {
     dw_wait_res = WaitForSingleObject(m_hmutex, INFINITE);
