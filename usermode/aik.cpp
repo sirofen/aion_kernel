@@ -57,7 +57,6 @@ bool aik::init_shared_memory(LPCTSTR name, AIK_INIT_APPROACH init_appr) {
     if (!m_shared_mutex || m_shared_memory) {
         return false;
     }
-    //shared_memory shd_mem_o(std::move(name), m_shared_mutex->handle());
     m_shared_memory = std::make_unique<shared_memory>(name, m_shared_mutex->handle());
     if (!m_shared_memory) {
         return false;

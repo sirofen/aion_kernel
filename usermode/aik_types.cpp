@@ -26,6 +26,6 @@ const unsigned long _DISPATCH_SHARED::size() noexcept {
 const unsigned char _DISPATCH_SHARED::aik_read_offset() noexcept {
     return 0;
 }
-const unsigned char _DISPATCH_SHARED::aik_write_offset() noexcept {
+const unsigned long _DISPATCH_SHARED::aik_write_offset() noexcept {
     return _AIK_READ::size();
 }

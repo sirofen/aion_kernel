@@ -39,7 +39,7 @@ struct _DISPATCH_SHARED {
                      std::unique_ptr<_AIK_WRITE> _aik_write = nullptr);
     const static unsigned long size() noexcept;
     const static unsigned char aik_read_offset() noexcept;
-    const static unsigned char aik_write_offset() noexcept;
+    const static unsigned long aik_write_offset() noexcept;
     std::unique_ptr<_AIK_READ> m_aik_read;
     std::unique_ptr<_AIK_WRITE> m_aik_write;
 };
