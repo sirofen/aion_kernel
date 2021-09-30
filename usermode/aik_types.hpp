@@ -6,16 +6,22 @@ typedef _DISPATCH_SHARED DISPATCH_SHARED, *PDISPATCH_SHARED;
 struct _AIK_READ {
     DISPATCH_SHARED contruct_dispatch();
     const static unsigned long size() noexcept;
-    wchar_t name[32];
-    unsigned char level;
-    bool gravity;
-    float speed;
-    float attack_speed;
+
+    wchar_t player_name[32];
+    unsigned char player_level;
+
+    bool player_gravity;
+    float player_speed;
+    std::uint32_t player_attack_speed;
 
     /* Target */
-    float x;
-    float y;
-    float z;
+    float target_speed;
+    std::uint32_t target_attack_speed;
+
+    float targer_x;
+    float target_y;
+    float target_z;
+
     wchar_t dbg_wprint[100];
 };
 typedef _AIK_READ AIK_READ, *PAIK_READ;
@@ -25,7 +31,7 @@ struct _AIK_WRITE {
     const static unsigned long size() noexcept;
     bool gravity;
     float speed;
-    float attack_speed;
+    std::uint32_t attack_speed;
 
     /* Target */
     float x;
