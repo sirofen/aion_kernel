@@ -23,7 +23,7 @@ public:
     const LPVOID value_pointer(const DWORD& offset = 0) const;
 
     template<typename T>
-    T read_value_typed(const ULONG& offset = 0, const ULONG& sz = sizeof(T)) {
+    T read_value_typed(ULONG offset = 0, ULONG sz = sizeof(T)) {
         WaitForSingleObject(m_hmutex, INFINITE);
         T _pval = *(T*)value_pointer(offset);
         ReleaseMutex(m_hmutex);
@@ -31,10 +31,10 @@ public:
     }
 
     template<typename T>
-    void write_value_typed(const T& _val, const ULONG& sz = sizeof(T)) {
+    void write_value_typed(const T& _val, ULONG offset, ULONG sz = sizeof(T)) {
         WaitForSingleObject(m_hmutex, INFINITE);
         //printf("mapped addr: 0x%p", m_mapped_addr);
-        CopyMemory(m_mapped_addr, &_val, sz);
+        CopyMemory((PVOID) ((UINT_PTR) m_mapped_addr + offset), &_val, sz);
         ReleaseMutex(m_hmutex);
     }
 

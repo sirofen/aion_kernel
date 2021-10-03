@@ -1,14 +1,14 @@
 #include <stdafx.h>
 #include <aik_types.hpp>
 
-_DISPATCH_SHARED _AIK_READ::contruct_dispatch() {
+_DISPATCH_SHARED _AIK_READ::contruct_dispatch() const {
     return _DISPATCH_SHARED(std::make_unique<_AIK_READ>(*this));
 };
 const unsigned long _AIK_READ::size() noexcept {
     return sizeof(_AIK_READ);
 }
 
-_DISPATCH_SHARED _AIK_WRITE::contruct_dispatch() {
+_DISPATCH_SHARED _AIK_WRITE::contruct_dispatch() const {
     return _DISPATCH_SHARED(nullptr, std::make_unique<_AIK_WRITE>(*this));
 };
 const unsigned long _AIK_WRITE::size() noexcept {

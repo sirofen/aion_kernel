@@ -21,10 +21,10 @@ int aik::read_shared_values(DISPATCH_SHARED& _pdispatch_shared_struct) {
 
 int aik::write_shared_values(const DISPATCH_SHARED& _pdispatch_shared_struct) {
     if (_pdispatch_shared_struct.m_aik_read) {
-        m_shared_memory->write_value_typed<AIK_READ>(*_pdispatch_shared_struct.m_aik_read);
+        m_shared_memory->write_value_typed<AIK_READ>(*_pdispatch_shared_struct.m_aik_read, DISPATCH_SHARED::aik_read_offset());
     }
     if (_pdispatch_shared_struct.m_aik_write) {
-        m_shared_memory->write_value_typed<AIK_WRITE>(*_pdispatch_shared_struct.m_aik_write);
+        m_shared_memory->write_value_typed<AIK_WRITE>(*_pdispatch_shared_struct.m_aik_write, DISPATCH_SHARED::aik_write_offset());
     }
     return 0;
 }
