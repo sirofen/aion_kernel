@@ -19,9 +19,9 @@ struct _entity {
     struct _pos {
         static constexpr WORD pointer = 0x180;
 
-        static constexpr BYTE z_cord = 0xA0;
-        static constexpr BYTE y_cord = 0x9C;
-        static constexpr BYTE x_cord = 0x98;
+        static constexpr BYTE z_coord = 0xA0;
+        static constexpr BYTE y_coord = 0x9C;
+        static constexpr BYTE x_coord = 0x98;
     } pos;
 };
 };// namespace _aion_entity

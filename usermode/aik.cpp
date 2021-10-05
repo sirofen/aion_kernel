@@ -65,13 +65,13 @@ int aik::read_client_values(const Driver::Module& _game_module, AIK_READ& _aik_r
     if (POINTER(debug_wprintf, m_player_entity_pointer, self_pos.pointer, _traverse_pointer, 4, m_ptrs_cache, 5, false) == false) {
         return -0x50;
     }
-    if (!NT_SUCCESS(driver->ReadMemType(_traverse_pointer + self_pos.x_cord, _aik_read.player_x))) {
+    if (!NT_SUCCESS(driver->ReadMemType(_traverse_pointer + self_pos.x_coord, _aik_read.player_x))) {
         return -0x51;
     }
-    if (!NT_SUCCESS(driver->ReadMemType(_traverse_pointer + self_pos.y_cord, _aik_read.player_y))) {
+    if (!NT_SUCCESS(driver->ReadMemType(_traverse_pointer + self_pos.y_coord, _aik_read.player_y))) {
         return -0x52;
     }
-    if (!NT_SUCCESS(driver->ReadMemType(_traverse_pointer + self_pos.z_cord, _aik_read.player_z))) {
+    if (!NT_SUCCESS(driver->ReadMemType(_traverse_pointer + self_pos.z_coord, _aik_read.player_z))) {
         return -0x53;
     }
     return 0;
@@ -106,15 +106,15 @@ int aik::write_client_values(const AIK_WRITE& _aik_write) {
     }
 
     if (_aik_write.player_x != 0 &&
-        !NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[5] + self_pos.x_cord, _aik_write.player_x))) {
+        !NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[5] + self_pos.x_coord, _aik_write.player_x))) {
         return -0x110;
     }
     if (_aik_write.player_y != 0 &&
-        !NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[5] + self_pos.y_cord, _aik_write.player_y))) {
+        !NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[5] + self_pos.y_coord, _aik_write.player_y))) {
         return -0x111;
     }
     if (_aik_write.player_z != 0 &&
-        !NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[5] + self_pos.z_cord, _aik_write.player_z))) {
+        !NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[5] + self_pos.z_coord, _aik_write.player_z))) {
         return -0x112;
     }
     return 0;
