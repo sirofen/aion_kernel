@@ -1,37 +1,81 @@
 #include <stdafx.h>
 
+#include <macro.h>
+#include <aion_offsets.hpp>
+
 namespace {
 constexpr LPCTSTR mutex_name = TEXT("aiKMutex");
 constexpr LPCTSTR file_mapping_name = TEXT("Global\\aiKFileMapping");
+constexpr auto tick_delay = 100;
 }// namespace
 
 int main() {
     aik aik;
 
-    aik.init_shared_mutex(mutex_name, AIK_INIT_APPROACH::OPEN);
-    //HANDLE hmutex = CreateMutex(NULL, FALSE, mutex_name);
-    //system("pause");
-    aik.init_shared_memory(file_mapping_name, AIK_INIT_APPROACH::OPEN);
+    if (!aik.init_shared_mutex(mutex_name, AIK_INIT_APPROACH::OPEN)) {
+        return -1;
+    }
+    if (!aik.init_shared_memory(file_mapping_name, AIK_INIT_APPROACH::OPEN)) {
+        return -1;
+    }
+
+    aik.debug_wprintf(L"[-] aiK client shared memory initialized");
+
+    if (auto status = aik.init_driver(); status != 0) {
+        return status;
+    }
+    //AION_VARS::aion_bin
+    if (auto status = aik.attach_proc(AION_VARS::aion_bin); status != 0) {
+        return status;
+    }
+
+    Driver::Module game_module;
+    //AION_VARS::aion_bin
+    if (auto status = aik.get_proc_module(AION_VARS::GAMEDLL::module_name, game_module); status != 0) {
+        return status;
+    }
+    
+    DISPATCH_SHARED _d_shd;
+    //while (1) {
+    //    aik.read_shared_values(_d_shd);
+    //    if (!_d_shd.m_aik_read->m_run) {
+    //        break;
+    //    }
+    //}
+    do {
+        if (auto status = aik.read_client_values(game_module, _d_shd); status != 0) {
+            aik.debug_wprintf(L"Read client values err: %d", status);
+        }
+        aik.write_shared_values(_d_shd);
+        Sleep(10);
+        aik.read_shared_values(_d_shd);
+        aik.write_client_values(_d_shd);
+    } while (_d_shd.m_aik_read->m_run);
+    return 0;
+    constexpr size_t read_sz = 0x10;
+
+    BYTE prev_bytes[read_sz];
+    BYTE new_bytes[read_sz];
+
+    std::uintptr_t ptr_cache[2] = {0, 0};
+    std::uintptr_t _addr_t = 0;
+
+    for (; !GetAsyncKeyState(VK_F12);)
+
+        return 0;
+
     //system("pause");
     for (int i = 0; i < 40; i++) {
         Sleep(1000);
-        //wchar_t str[100];
-        //std::wcin.get(str, 100);
-        //std::getchar();
-        //AIK_READ aik_read;
-        //memcpy(aik_read.dbg_wprint, str, 100);
-        //AIK_READ _n;
-        //wchar_t str[100] = L"\n";
-        //memcpy(_n.dbg_wprint, str, 100);
-        //aik.write_shared_values(_n.contruct_dispatch());
 
-        AIK_READ aik_read{.player_speed = (float)i,
-                          .player_attack_speed = (uint32_t)i,
+        AIK_READ aik_read{.player_speed = (float) i,
+                          .player_attack_speed = (uint32_t) i,
                           .target_speed = 10.3232233,
                           .target_attack_speed = 23232323,
                           .target_x = 23.332,
                           .target_y = 3223.123,
-                          .target_z = 999.123};
+                          .target_z = 999.123,
+                          .dbg_wprint = L"printA"};
         //std::cout << "\nspeed :";
         //std::wcin >> aik_read.player_speed;
         //std::cout << "\ndbg str: ";
@@ -43,13 +87,13 @@ int main() {
         printf("values to write, speed: %f, attack speed: %u\n", dis_sh.m_aik_write->speed, dis_sh.m_aik_write->attack_speed);
     }
 
-    for (;0; Sleep(1000)) {
+    for (; 0; Sleep(1000)) {
         DISPATCH_SHARED dis_sh;
         aik.read_shared_values(dis_sh);
         printf(".");
     }
 
-   
+
     system("pause");
     //aik.init_driver();
 

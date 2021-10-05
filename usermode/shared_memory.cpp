@@ -65,7 +65,9 @@ void shared_memory::map_view(DWORD dwDesiredAccess,
             } __finally {
                 if (!ReleaseMutex(m_hmutex)) {
                     display_error("Release mutex error");
-                }
+                    return;
+                } 
+                wprintf(L"Mapped address: 0x%llX, sz: %lu\n", m_mapped_addr, dwNumberOfBytesToMap);
             }
             break;
         }
@@ -77,7 +79,7 @@ void shared_memory::map_view(DWORD dwDesiredAccess,
 
 const LPVOID shared_memory::value_pointer(const ULONG& offset) const {
     if (m_mapped_addr == 0x0) {
-        throw 0;
+        throw std::runtime_error("Mapped address is null");
     }
     return (LPVOID)((unsigned long long)m_mapped_addr + offset);
 }

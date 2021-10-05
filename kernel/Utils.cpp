@@ -28,7 +28,7 @@ PMODULE_ENTRY Utils::GetModuleByName(PEPROCESS process, PWCHAR moduleName) {
             PLDR_DATA_TABLE_ENTRY32 module = CONTAINING_RECORD(plist_entry, LDR_DATA_TABLE_ENTRY32, InLoadOrderLinks);
 			print("[-] module32 entry: %S", module->BaseDllName.Buffer);
 			//_wcsicmp
-            if (wcscmp((PWCH) module->BaseDllName.Buffer, moduleName) == 0) {
+            if (_wcsicmp((PWCH) module->BaseDllName.Buffer, moduleName) == 0) {
                 auto entry = MODULE_ENTRY(module);
                 return &entry;
             }

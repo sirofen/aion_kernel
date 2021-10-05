@@ -54,7 +54,7 @@ public:
 	const NTSTATUS WriteMemType(const ULONG_PTR& addr, T& _val, const ULONGLONG sz = sizeof(T)) {
         REQUEST_WRITE req;
         req.ProcessId = this->ProcessId;
-        req.Src = &_val;
+        req.Src = (PVOID) &_val;
         req.Dest = (PVOID) addr;
         req.Size = sz;
         req.bPhysicalMem = this->bPhysicalMode;
@@ -92,9 +92,9 @@ public:
 		// Walkthrough all processes.
 		if (Process32First(snapshot, &process))
 		{
-			do
-			{
-				if (wcsstr(process.szExeFile, process_name))
+			do {
+                //if (wcsstr(process.szExeFile, process_name))
+                if (_wcsicmp(process.szExeFile, process_name) == 0)
 				{
 					pid = process.th32ProcessID;
 					break;

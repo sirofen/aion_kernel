@@ -3,7 +3,129 @@
 #include <global_vars.hpp>
 #include <memory>
 
+#include <macro.h>
+#include <aion_offsets.hpp>
+
 aik::aik() {}
+
+namespace {
+constexpr auto& self_basic_properties = AION_VARS::GAMEDLL::self_pointer::player.basic_properties;
+constexpr auto& self_pos = AION_VARS::GAMEDLL::self_pointer::player.pos;
+}
+
+int aik::read_client_values(const Driver::Module& _game_module, AIK_READ& _aik_read) {
+    if (!driver) {
+        return -0xA;
+    }
+
+    static std::uintptr_t _traverse_pointer{};
+
+    if (m_player_entity_pointer == 0) {
+        /* player pointer */
+        /* can't use just ! 'cos there's lambda declaration in front */
+        if (POINTER(debug_wprintf, _game_module.addr, AION_VARS::GAMEDLL::self_pointer::pointer_0, _traverse_pointer, 4, m_ptrs_cache, 0, true) == false) {
+            return -0x3A;
+        }
+        if (POINTER(debug_wprintf, _traverse_pointer, AION_VARS::GAMEDLL::self_pointer::pointer_1, _traverse_pointer, 4, m_ptrs_cache, 1, false) == false) {
+            return -0x3B;
+        }
+        if (POINTER(debug_wprintf, _traverse_pointer, AION_VARS::GAMEDLL::self_pointer::pointer_2, _traverse_pointer, 4, m_ptrs_cache, 2, false) == false) {
+            return -0x3C;
+        }
+        if (POINTER(debug_wprintf, _traverse_pointer, AION_VARS::GAMEDLL::self_pointer::pointer_3, _traverse_pointer, 4, m_ptrs_cache, 3, false) == false) {
+            return -0x3D;
+        }
+
+        /* read player basic properties */
+        m_player_entity_pointer = _traverse_pointer;
+    }
+
+    if (POINTER(debug_wprintf, m_player_entity_pointer, self_basic_properties.pointer, _traverse_pointer, 4, m_ptrs_cache, 4, false) == false) {
+        return -0x40;
+    }
+    if (!NT_SUCCESS(driver->ReadMemType(_traverse_pointer + self_basic_properties.name, _aik_read.player_name))) {
+        return -0x41;
+    }
+    if (!NT_SUCCESS(driver->ReadMemType(_traverse_pointer + self_basic_properties.name, _aik_read.player_level))) {
+        return -0x42;
+    }
+    static std::uint32_t _player_gravity;
+    if (!NT_SUCCESS(driver->ReadMemType(_traverse_pointer + self_basic_properties.gravity.offset, _player_gravity))) {
+        return -0x43;
+    }
+    _aik_read.player_no_gravity = _player_gravity == self_basic_properties.gravity.no_gravity;
+    if (!NT_SUCCESS(driver->ReadMemType(_traverse_pointer + self_basic_properties.attack_speed, _aik_read.player_attack_speed))) {
+        return -0x44;
+    }
+    if (!NT_SUCCESS(driver->ReadMemType(_traverse_pointer + self_basic_properties.speed, _aik_read.player_speed))) {
+        return -0x45;
+    }
+
+    /* read player position */
+    if (POINTER(debug_wprintf, m_player_entity_pointer, self_pos.pointer, _traverse_pointer, 4, m_ptrs_cache, 5, false) == false) {
+        return -0x50;
+    }
+    if (!NT_SUCCESS(driver->ReadMemType(_traverse_pointer + self_pos.x_cord, _aik_read.player_x))) {
+        return -0x51;
+    }
+    if (!NT_SUCCESS(driver->ReadMemType(_traverse_pointer + self_pos.y_cord, _aik_read.player_y))) {
+        return -0x52;
+    }
+    if (!NT_SUCCESS(driver->ReadMemType(_traverse_pointer + self_pos.z_cord, _aik_read.player_z))) {
+        return -0x53;
+    }
+    return 0;
+}
+
+int aik::read_client_values(const Driver::Module& _game_module, DISPATCH_SHARED& _dispatch_shared) {
+    AIK_READ _aik_read;
+    if (auto status = read_client_values(_game_module, _aik_read); status != 0) {
+        return status;
+    }
+    _dispatch_shared.m_aik_read = std::make_unique<AIK_READ>(_aik_read);
+    return 0;
+}
+
+int aik::write_client_values(const AIK_WRITE& _aik_write) {
+    if (!driver) {
+        return -0x1A;
+    }
+    if (m_ptrs_cache[4] == 0) {
+        return -0x100;
+    }
+    if (!NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[4] + self_basic_properties.gravity.offset, self_basic_properties.gravity.no_gravity))) {
+        return -0x101;
+    }
+    if (_aik_write.speed != 0 &&
+        !NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[4] + self_basic_properties.speed, _aik_write.speed))) {
+        return -0x102;
+    }
+    if (_aik_write.attack_speed != 0 &&
+        !NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[4] + self_basic_properties.attack_speed, _aik_write.attack_speed))) {
+        return -0x103;
+    }
+
+    if (_aik_write.player_x != 0 &&
+        !NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[5] + self_pos.x_cord, _aik_write.player_x))) {
+        return -0x110;
+    }
+    if (_aik_write.player_y != 0 &&
+        !NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[5] + self_pos.y_cord, _aik_write.player_y))) {
+        return -0x111;
+    }
+    if (_aik_write.player_z != 0 &&
+        !NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[5] + self_pos.z_cord, _aik_write.player_z))) {
+        return -0x112;
+    }
+    return 0;
+}
+
+int aik::write_client_values(const DISPATCH_SHARED& _dispatch_shared) {
+    if (auto status = write_client_values(*_dispatch_shared.m_aik_write); status != 0) {
+        return status;
+    }
+    return 0;
+}
 
 void aik::debug_print(const wchar_t* _str, unsigned short sz) {
     AIK_READ _aik_read_struct;
@@ -16,16 +138,18 @@ int aik::read_shared_values(DISPATCH_SHARED& _pdispatch_shared_struct) {
         std::make_unique<AIK_READ>(m_shared_memory->read_value_typed<AIK_READ>((ULONG) DISPATCH_SHARED::aik_read_offset()));
     _pdispatch_shared_struct.m_aik_write = 
         std::make_unique<AIK_WRITE>(m_shared_memory->read_value_typed<AIK_WRITE>((ULONG) DISPATCH_SHARED::aik_write_offset()));
+    //_pdispatch_shared_struct.m_run = m_shared_memory->read_value_typed<BYTE>((ULONG) DISPATCH_SHARED::run_offset);    
     return 0;
 }
 
 int aik::write_shared_values(const DISPATCH_SHARED& _pdispatch_shared_struct) {
-    if (_pdispatch_shared_struct.m_aik_read) {
-        m_shared_memory->write_value_typed<AIK_READ>(*_pdispatch_shared_struct.m_aik_read, DISPATCH_SHARED::aik_read_offset());
+    if (_pdispatch_shared_struct.m_aik_read) {                                                                            /* dont write bool m_run; */
+        m_shared_memory->write_value_typed<AIK_READ>(*_pdispatch_shared_struct.m_aik_read, DISPATCH_SHARED::aik_read_offset(), sizeof(AIK_READ) - 4);
     }
     if (_pdispatch_shared_struct.m_aik_write) {
         m_shared_memory->write_value_typed<AIK_WRITE>(*_pdispatch_shared_struct.m_aik_write, DISPATCH_SHARED::aik_write_offset());
     }
+    /* don't update DISPATCH_SHARED::m_run from client side */
     return 0;
 }
 
@@ -85,15 +209,39 @@ bool aik::init_shared_memory(LPCTSTR name, AIK_INIT_APPROACH init_appr) {
     return true;
 }
 
-bool aik::init_driver() {
+int aik::init_driver() {
     if (!m_shared_memory) {
-        return false;
+        return -0xA;
     }
-    debug_wprintf(L"[!] Open driver connection: ");
+    debug_wprintf(L"[-] Open driver connection: ");
     if (!driver->Init(AIK_GLOBAL_SETTINGS::driver_mode)) {
-        debug_wprintf(L"Failed!\n");
-        return false;
+        debug_wprintf(L"\t Failed!");
+        return -0xB;
     }
-    debug_wprintf(L"Success!\n");
-    return true;
+    debug_wprintf(L"\t Success!");
+
+    return 0;
+}
+
+int aik::attach_proc(const wchar_t* proc_name) {
+    debug_wprintf(L"[-] Attach process %s: ", proc_name);
+    if (!driver->Attach(proc_name)) {
+        debug_wprintf(L"\t Failed!");
+        return -0x1A;
+    }
+    debug_wprintf(L"\t Success!");
+    debug_wprintf(L"[-] %s PID: %u", proc_name, driver->ProcessId);
+    return 0;
+}
+
+int aik::get_proc_module(const wchar_t* module_name, Driver::Module& _module) {
+    debug_wprintf(L"[-] Get %s module: ", module_name);
+    _module = driver->GetModuleBase(module_name);
+    if (_module.empty()) {
+        debug_wprintf(L"[-] %s addr: 0x%llX, sz: %u", module_name, _module.addr, _module.size);
+        debug_wprintf(L"\t Failed!");
+        return -0x2A;
+    }
+    debug_wprintf(L"\t Success!");
+    return 0;
 }

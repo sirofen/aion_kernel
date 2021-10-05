@@ -25,7 +25,5 @@
 #include <shared_mutex.hpp>
 #include <err.hpp>
 
-#include <aion_offsets.hpp>
-
 #pragma comment(lib, "ntdll.lib")
 #pragma comment(lib, "Shlwapi.lib")

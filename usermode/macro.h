@@ -51,26 +51,26 @@
 //	wprintf_s(L"\n");
 //}
 
-#define POINTER_7(_ADDRESS, _OFFSET, _RET_VAL, _SIZE, _CACHE, _ITERATION, _PRINT_BASE_ADDR)		\
+#define POINTER_8(_HANDLER, _ADDRESS, _OFFSET, _RET_VAL, _SIZE, _CACHE, _ITERATION, _PRINT_BASE_ADDR)		\
 	auto pointer = [&]() {																		\
 		if (driver->ReadMemType(_ADDRESS + _OFFSET, _RET_VAL, _SIZE) != STATUS_SUCCESS			\
 			|| _RET_VAL == 0x0) {																\
 			return false;																		\
 		}																						\
 		if (_RET_VAL != _CACHE[_ITERATION]) {													\
-			if (_PRINT_BASE_ADDR) { wprintf_s(L"\n\t{%u}:[0x%llX]", _ITERATION, _ADDRESS); }	\
+			if (_PRINT_BASE_ADDR) { _HANDLER(L"\n\t{%u}:[0x%llX]", _ITERATION, _ADDRESS); }	\
 			if (_OFFSET != 0x0) {																\
-				wprintf_s(L" %S0x%llX", _OFFSET > 0 ? "+ " : "- ", _OFFSET);					\
+				_HANDLER(L" %S0x%llX", _OFFSET > 0 ? "+ " : "- ", _OFFSET);					\
 			}																					\
-			wprintf_s(L" -> {%u}:[0x%llX]", _ITERATION + 1, _RET_VAL);							\
+			_HANDLER(L" -> {%u}:[0x%llX]", _ITERATION + 1, _RET_VAL);							\
 			_CACHE[_ITERATION] = _RET_VAL;														\
 		}																						\
 		return true;																			\
 	};																							\
 	pointer()
 
-#define POINTER_6(_ADDRESS, _RET_VAL, _SIZE, _CACHE, _ITERATION, _PRINT_BASE_ADDR)  POINTER_7(_ADDRESS, 0x0, _RET_VAL, _SIZE, _CACHE, _ITERATION, _PRINT_BASE_ADDR)
-#define POINTER_5(_ADDRESS, _RET_VAL, _SIZE, _CACHE, _ITERATION)					POINTER_6(_ADDRESS, _RET_VAL, _SIZE, _CACHE, _ITERATION, false)
-#define GET_MACRO(_1,_2,_3,_4,_5,_6,_7, NAME, ...) NAME
+#define POINTER_7(_HANDLER, _ADDRESS, _RET_VAL, _SIZE, _CACHE, _ITERATION, _PRINT_BASE_ADDR) POINTER_8(_HANDLER, _ADDRESS, 0x0, _RET_VAL, _SIZE, _CACHE, _ITERATION, _PRINT_BASE_ADDR)
+#define POINTER_6(_HANDLER, _ADDRESS, _RET_VAL, _SIZE, _CACHE, _ITERATION) POINTER_7(_HANDLER, _ADDRESS, _RET_VAL, _SIZE, _CACHE, _ITERATION, false)
+#define GET_MACRO(_1,_2,_3,_4,_5,_6,_7,_8, NAME, ...) NAME
 #define MSVC_BUG(x) x /* it took me 3 hours */
-#define POINTER(...) MSVC_BUG(GET_MACRO(##__VA_ARGS__, POINTER_7 ,POINTER_6, POINTER_5,,,,,)(__VA_ARGS__))
+#define POINTER(...) MSVC_BUG(GET_MACRO(##__VA_ARGS__, POINTER_8 ,POINTER_7, POINTER_6,,,,,,)(__VA_ARGS__))
