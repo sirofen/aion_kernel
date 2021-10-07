@@ -9,7 +9,8 @@ struct _entity {
         static constexpr BYTE name = 0x46;
         static constexpr BYTE lvl = 0x42;
         static struct _gravity {
-            static constexpr WORD offset = 0x8D8;  
+            static constexpr WORD offset = 0x8D8;
+            static constexpr BYTE gravity = 0x0;
             static constexpr BYTE no_gravity = 0x6;
         } gravity;
         static constexpr WORD attack_speed = 0x4FA;
@@ -49,6 +50,12 @@ struct GAMEDLL {
 };
 struct CRY3DENGINE {
     static constexpr LPCWSTR module_name = L"Cry3DEngine.dll";
-    static constexpr DWORD radar = 0x26BF68;
+    struct radar {
+        static constexpr DWORD pointer_0 = 0x26BF68;
+        static constexpr WORD pointer_1 = 0x2B8;
+
+        static constexpr BYTE radar_init = 0x5;    
+        static constexpr BYTE radar_deinit = 0x0; 
+    };
 };
 };// namespace AION_VARS

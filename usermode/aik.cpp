@@ -11,9 +11,10 @@ aik::aik() {}
 namespace {
 constexpr auto& self_basic_properties = AION_VARS::GAMEDLL::self_pointer::player.basic_properties;
 constexpr auto& self_pos = AION_VARS::GAMEDLL::self_pointer::player.pos;
+constexpr AION_VARS::CRY3DENGINE::radar radar;
 }
 
-int aik::read_client_values(const Driver::Module& _game_module, AIK_READ& _aik_read) {
+int aik::read_client_values(const Driver::Module& _game_module, const Driver::Module& _cryengine_module, AIK_READ& _aik_read) {
     if (!driver) {
         return -0xA;
     }
@@ -74,12 +75,20 @@ int aik::read_client_values(const Driver::Module& _game_module, AIK_READ& _aik_r
     if (!NT_SUCCESS(driver->ReadMemType(_traverse_pointer + self_pos.z_coord, _aik_read.player_z))) {
         return -0x53;
     }
+
+    /* Cry3DEngine */ 
+    if (POINTER(debug_wprintf, _cryengine_module.addr, radar.pointer_0, _traverse_pointer, 4, m_ptrs_cache, 6, false) == false) {
+        return -0x6A;
+    }
+    //if (POINTER(debug_wprintf, _cryengine_module.addr, radar.pointer_1, _traverse_pointer, 4, m_ptrs_cache, 7, false) == false) {
+    //    return -0x6B;
+    //}
     return 0;
 }
 
-int aik::read_client_values(const Driver::Module& _game_module, DISPATCH_SHARED& _dispatch_shared) {
+int aik::read_client_values(const Driver::Module& _game_module, const Driver::Module& _cryengine_module, DISPATCH_SHARED& _dispatch_shared) {
     AIK_READ _aik_read;
-    if (auto status = read_client_values(_game_module, _aik_read); status != 0) {
+    if (auto status = read_client_values(_game_module, _cryengine_module, _aik_read); status != 0) {
         return status;
     }
     _dispatch_shared.m_aik_read = std::make_unique<AIK_READ>(_aik_read);
@@ -93,9 +102,16 @@ int aik::write_client_values(const AIK_WRITE& _aik_write) {
     if (m_ptrs_cache[4] == 0) {
         return -0x100;
     }
-    if (!NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[4] + self_basic_properties.gravity.offset, self_basic_properties.gravity.no_gravity))) {
-        return -0x101;
+    if (_aik_write.no_gravity) {
+        if (!NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[4] + self_basic_properties.gravity.offset, self_basic_properties.gravity.no_gravity))) {
+            return -0x101;
+        }
+    } else {
+        if (!NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[4] + self_basic_properties.gravity.offset, self_basic_properties.gravity.gravity))) {
+            return -0x101;
+        }
     }
+
     if (_aik_write.speed != 0 &&
         !NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[4] + self_basic_properties.speed, _aik_write.speed))) {
         return -0x102;
@@ -117,8 +133,17 @@ int aik::write_client_values(const AIK_WRITE& _aik_write) {
         !NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[5] + self_pos.z_coord, _aik_write.player_z))) {
         return -0x112;
     }
+    if (_aik_write.radar) {
+        if (!NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[6] + radar.pointer_1, radar.radar_init))) {
+            return -0x113;
+        }
+    } else {
+        if (!NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[6] + radar.pointer_1, radar.radar_deinit))) {
+            return -0x114;
+        }
+    }
     return 0;
-}
+    }
 
 int aik::write_client_values(const DISPATCH_SHARED& _dispatch_shared) {
     if (auto status = write_client_values(*_dispatch_shared.m_aik_write); status != 0) {

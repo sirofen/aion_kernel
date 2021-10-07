@@ -9,6 +9,13 @@ constexpr LPCTSTR file_mapping_name = TEXT("Global\\aiKFileMapping");
 constexpr auto tick_delay = 100;
 }// namespace
 
+namespace {
+constexpr BYTE pattern[] = {'p', '0x0', 'u', '0x0', 'n', '0x0', 'p', '0x0', 'c', '0x0', 'k', '0x0', 'h', '0x0', 'w', '0x0', 'd', '0x0', 'v', '0x0', 'm', '0x0', 'd', '0x0', 'e', '0x0', 'o'};
+
+constexpr auto read_sz = 10;
+BYTE new_bytes[read_sz];
+}
+
 int main() {
     aik aik;
 
@@ -21,33 +28,36 @@ int main() {
 
     aik.debug_wprintf(L"[-] aiK client shared memory initialized");
 
-    if (auto status = aik.init_driver(); status != 0) {
-        return status;
+    while (auto status = aik.init_driver() != 0) {
+        aik.debug_wprintf(L"Waiting for driver, status: 0x%lX", status);
+        Sleep(4000);
     }
-    //AION_VARS::aion_bin
-    if (auto status = aik.attach_proc(AION_VARS::aion_bin); status != 0) {
-        return status;
+    while (auto status = aik.attach_proc(AION_VARS::aion_bin) != 0) {
+        aik.debug_wprintf(L"Waiting for process, status: 0x%lX", status);
+        Sleep(4000);
     }
 
     Driver::Module game_module;
-    //AION_VARS::aion_bin
-    if (auto status = aik.get_proc_module(AION_VARS::GAMEDLL::module_name, game_module); status != 0) {
-        return status;
+    while (auto status = aik.get_proc_module(AION_VARS::GAMEDLL::module_name, game_module) != 0) {
+        aik.debug_wprintf(L"Waiting for Game module to load, status: 0x%lX", status);
+        Sleep(4000);
     }
+
+    Driver::Module cryengine_module;
+    while (auto status = aik.get_proc_module(AION_VARS::CRY3DENGINE::module_name, cryengine_module) != 0) {
+        aik.debug_wprintf(L"Waiting for Cry3DEngine module to load, status: 0x%lX", status);
+        Sleep(4000);
+    }
+
     
     DISPATCH_SHARED _d_shd;
-    //while (1) {
-    //    aik.read_shared_values(_d_shd);
-    //    if (!_d_shd.m_aik_read->m_run) {
-    //        break;
-    //    }
-    //}
     do {
-        if (auto status = aik.read_client_values(game_module, _d_shd); status != 0) {
-            aik.debug_wprintf(L"Read client values err: %d", status);
+        while (auto status = aik.read_client_values(game_module, cryengine_module, _d_shd) != 0) {
+            aik.debug_wprintf(L"Waiting for client values, status: 0x%lX", status);
+            Sleep(4000);
         }
         aik.write_shared_values(_d_shd);
-        Sleep(10);
+        Sleep(tick_delay);
         aik.read_shared_values(_d_shd);
         aik.write_client_values(_d_shd);
     } while (_d_shd.m_aik_read->m_run);
