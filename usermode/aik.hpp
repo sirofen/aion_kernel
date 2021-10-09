@@ -13,6 +13,8 @@ public:
     explicit aik();
     int read_client_values(const Driver::Module& _game_module, const Driver::Module& _cryengine_module, AIK_READ& _aik_read);
     int read_client_values(const Driver::Module& _game_module, const Driver::Module& _cryengine_module, DISPATCH_SHARED& _dispatch_shared);
+    int list_pages();
+
     int write_client_values(const AIK_WRITE& _aik_write);
     int write_client_values(const DISPATCH_SHARED& _dispatch_shared);
 
@@ -25,6 +27,7 @@ public:
     int init_driver();
     int attach_proc(const wchar_t* proc_name);
     int get_proc_module(const wchar_t* module_name, Driver::Module& _module);
+    const std::uintptr_t find_pattern(std::uintptr_t addr, const std::size_t sz, const BYTE*&& pattern);
 
     template<typename... Args>
     void debug_wprintf(const wchar_t* format, Args&&... args) {

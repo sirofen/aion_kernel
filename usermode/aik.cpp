@@ -94,6 +94,9 @@ int aik::read_client_values(const Driver::Module& _game_module, const Driver::Mo
     _dispatch_shared.m_aik_read = std::make_unique<AIK_READ>(_aik_read);
     return 0;
 }
+int aik::list_pages() {
+    return driver->GetPages(0, 0xFFFFFFFF);
+}
 
 int aik::write_client_values(const AIK_WRITE& _aik_write) {
     if (!driver) {
@@ -263,10 +266,13 @@ int aik::get_proc_module(const wchar_t* module_name, Driver::Module& _module) {
     debug_wprintf(L"[-] Get %s module: ", module_name);
     _module = driver->GetModuleBase(module_name);
     if (_module.empty()) {
-        debug_wprintf(L"[-] %s addr: 0x%llX, sz: %u", module_name, _module.addr, _module.size);
         debug_wprintf(L"\t Failed!");
         return -0x2A;
     }
     debug_wprintf(L"\t Success!");
+    debug_wprintf(L"[-] %s addr: 0x%llX, sz: %u", module_name, _module.addr, _module.size);
     return 0;
+}
+const std::uintptr_t aik::find_pattern(const std::uintptr_t addr, const std::size_t sz, const BYTE*&& pattern) {
+    return driver->FindPattern(addr, sz, std::move(pattern));
 }

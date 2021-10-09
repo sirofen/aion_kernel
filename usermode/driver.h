@@ -27,6 +27,9 @@ public:
 		}
 		return false;
 	}
+    void change_mode(const BOOL physical_mode) {
+        this->bPhysicalMode = physical_mode;
+    }
 
 	const NTSTATUS SendRequest(const UINT type, const PVOID args) {
 		REQUEST_DATA req;
@@ -81,6 +84,15 @@ public:
         req.bPhysicalMem = this->bPhysicalMode;
         return this->SendRequest(REQUEST_TYPE::READ, &req);
     }
+
+	const NTSTATUS GetPages(const std::uintptr_t base, const DWORD sz) {
+        REQUEST_PAGES req;
+        req.ProcessId = this->ProcessId;
+        req.ModuleBase = reinterpret_cast<PVOID>(base);
+        req.ModuleSize = sz;
+        return this->SendRequest(REQUEST_TYPE::PAGES, &req);
+	}
+
 
 	const UINT GetProcessId(const wchar_t* process_name) {
 		UINT pid = 0;
@@ -175,7 +187,7 @@ private:
 		PROTECT,
 		ALLOC,
 		FREE,
-		//PAGES,
+		PAGES,
 		MODULE,
 		MAINBASE,
 		THREADCALL,
@@ -245,12 +257,12 @@ private:
 		PBYTE* OutAddress;
 	} REQUEST_MAINBASE, * PREQUEST_MAINBASE;
 
-	//typedef struct _REQUEST_PAGES {
- //       DWORD ProcessId;
- //       PVOID ModuleBase;
- //       DWORD ModuleSize;
- //       PAGE (*Pages)[0x20];
- //   } REQUEST_PAGES, *PREQUEST_PAGES;
+	typedef struct _REQUEST_PAGES {
+        DWORD ProcessId;
+        PVOID ModuleBase;
+        DWORD ModuleSize;
+        PAGE Pages[0xFF];
+    } REQUEST_PAGES, *PREQUEST_PAGES;
 };
 
 static Driver* driver = new Driver;

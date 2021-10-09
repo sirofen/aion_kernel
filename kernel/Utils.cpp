@@ -7,6 +7,7 @@ PMODULE_ENTRY Utils::GetModuleByName(PEPROCESS process, PWCHAR moduleName) {
 
         PPEB peb64 = PsGetProcessPeb(process);
         if (peb64 && peb64->Ldr) {
+            //print("Process Heap: 0x%llX", peb64->ProcessHeap);
             PLIST_ENTRY list = &(peb64->Ldr->InLoadOrderModuleList);
             for (PLIST_ENTRY entry = list->Flink; entry != list;) {
                 PLDR_DATA_TABLE_ENTRY module = CONTAINING_RECORD(entry, LDR_DATA_TABLE_ENTRY, InLoadOrderLinks);
@@ -23,10 +24,17 @@ PMODULE_ENTRY Utils::GetModuleByName(PEPROCESS process, PWCHAR moduleName) {
         if (!peb32 || !peb32->Ldr) {
             return NULL;
         }
+        //print("Process Heap: 0x%llX", peb32->ProcessHeap);
+        //const auto addr = 0xEB7FCEA0;
         for (PLIST_ENTRY32 plist_entry = (PLIST_ENTRY32) ((PPEB_LDR_DATA32) peb32->Ldr)->InLoadOrderModuleList.Flink;
              plist_entry != &((PPEB_LDR_DATA32) peb32->Ldr)->InLoadOrderModuleList;) {
             PLDR_DATA_TABLE_ENTRY32 module = CONTAINING_RECORD(plist_entry, LDR_DATA_TABLE_ENTRY32, InLoadOrderLinks);
 			print("[-] module32 entry: %S", module->BaseDllName.Buffer);
+
+			//if (module->DllBase <= addr && (module->SizeOfImage + module->DllBase) >= addr) {
+   //             print("==========================FOUND========================");
+			//}
+   //         print("\taddr: 0x%llX, sz: %lu", module->DllBase, module->SizeOfImage);
 			//_wcsicmp
             if (_wcsicmp((PWCH) module->BaseDllName.Buffer, moduleName) == 0) {
                 auto entry = MODULE_ENTRY(module);
