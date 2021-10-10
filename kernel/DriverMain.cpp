@@ -96,19 +96,19 @@ NTSTATUS DriversMaain(PVOID lpBaseAddress, DWORD32 dwSize) {
         print("driver args p 0x%p", lpBaseAddress);
 	}
 
-	/* phymemx64.sys (timeDateStamp) 0x58355a99 */
-    if (piddbcache::ClearPiddbCacheTable(phymemx64::TIME_DATE_STAMP) == STATUS_SUCCESS) {
-        print("[PiDDBCT] Clear PiddbCacheTable -> Success");
-    } else {
-        print("[PiDDBCT] Clear PiddbCacheTable -> Error");
-    }
+	///* phymemx64.sys (timeDateStamp) 0x58355a99 */
+ //   if (piddbcache::ClearPiddbCacheTable(phymemx64::TIME_DATE_STAMP) == STATUS_SUCCESS) {
+ //       print("[PiDDBCT] Clear PiddbCacheTable -> Success");
+ //   } else {
+ //       print("[PiDDBCT] Clear PiddbCacheTable -> Error");
+ //   }
 
-	UNICODE_STRING driver_name = RTL_CONSTANT_STRING(phymemx64::DRIVER_NAME);
-    if (mmunloadeddrivers::ClearMmUnloadedDrivers(&driver_name, TRUE) == STATUS_SUCCESS) {
-        print("[MmUD] Clear MmUnloadedDrivers -> Success");
-    } else {
-        print("[MmUD] Clear MmUnloadedDrivers -> Error");
-    }
+	//UNICODE_STRING driver_name = RTL_CONSTANT_STRING(phymemx64::DRIVER_NAME);
+ //   if (mmunloadeddrivers::ClearMmUnloadedDrivers(&driver_name, TRUE) == STATUS_SUCCESS) {
+ //       print("[MmUD] Clear MmUnloadedDrivers -> Success");
+ //   } else {
+ //       print("[MmUD] Clear MmUnloadedDrivers -> Error");
+ //   }
 
 	driver_main();
 	return -1;

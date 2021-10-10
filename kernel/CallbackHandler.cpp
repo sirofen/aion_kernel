@@ -171,66 +171,54 @@ NTSTATUS CallbackFREE(PREQUEST_FREE args)
 
 NTSTATUS CallbackPAGES(PREQUEST_PAGES args) {
     PEPROCESS process = NULL;
-    
-    if (NTSTATUS status = (PsLookupProcessByProcessId) ((HANDLE) args->ProcessId, &process); 
-		!NT_SUCCESS(status)) {
+
+    if (NTSTATUS status = (PsLookupProcessByProcessId) ((HANDLE) args->ProcessId, &process);
+        !NT_SUCCESS(status)) {
         return status;
     }
-    KAPC_STATE _kapc_s;
+
+    static constexpr DWORD page_array_sz = sizeof(*args->Pages) / sizeof(*args->Pages[0]);
+    PRINT_DEBUG("[!] page_array_sz: 0x%lX", page_array_sz);
+
+    const auto module_base = (UINT_PTR) args->ModuleBase;
+    const auto module_size = args->ModuleSize;
+    PRINT_DEBUG("[!] Page list base: 0x%llX, sz: 0x%llX", module_base, module_size);
+
+    MEMORY_BASIC_INFORMATION mem_basic_inf{};
 
     DWORD page_iter = 0;
-    __try {
-        KeAttachProcess(process);
+    for (auto cur_page_addr = module_base;
+         cur_page_addr < module_base + module_size;
+         cur_page_addr = (ULONG_PTR) mem_basic_inf.BaseAddress + mem_basic_inf.RegionSize) {
 
-        print("PAGESSSS");
-        const auto& page_array_sz = sizeof(args->Pages) / sizeof(args->Pages[0]);
-        PRINT_DEBUG("[!] page_array_sz: %u", page_array_sz);
-        auto& page_array = args->Pages;
-
-        const auto module_base = (UINT_PTR) args->ModuleBase;
-        const auto module_size = args->ModuleSize;
-        PRINT_DEBUG("[!] module base: 0x%llX, sz: %u", module_base, module_size);
-
-        MEMORY_BASIC_INFORMATION mem_basic_inf = {};
-
-        SIZE_T length = 0;
-        for (auto cur_page_addr = module_base;
-             cur_page_addr < module_base + module_size;
-             cur_page_addr = (ULONG_PTR) mem_basic_inf.BaseAddress + mem_basic_inf.RegionSize) {
-            //PRINT_DEBUG("[!] VirtualMemory base: 0x%p, sz: %lu", mem_basic_inf.BaseAddress, mem_basic_inf.RegionSize);
-            if (NTSTATUS status = ZwQueryVirtualMemory(ZwCurrentProcess(),
-                                                       (PVOID) (cur_page_addr),
-                                                       MemoryBasicInformation,
-                                                       &mem_basic_inf,
-                                                       sizeof(mem_basic_inf),
-                                                       &length);
-                status != STATUS_SUCCESS) {
-                break;
-                //return status;
-            }
-            if (mem_basic_inf.State == MEM_COMMIT && mem_basic_inf.Protect != PAGE_NOACCESS && !(mem_basic_inf.Protect & PAGE_GUARD)) {
-                if (!page_iter < page_array_sz) {
-                    PRINT_ERROR("[?] Page container is too small. Size: %u. Current iteration: %u", page_array_sz, page_iter);
-                    return STATUS_ARRAY_BOUNDS_EXCEEDED;
-                }
-                page_iter++;
-                //page_array[page_iter++] = {mem_basic_inf.BaseAddress, (DWORD)mem_basic_inf.RegionSize};
-
-                PRINT_DEBUG("[!] Accessible page - base: 0x%p, sz: %lu", mem_basic_inf.BaseAddress, mem_basic_inf.RegionSize);
-            }
-            PRINT_TRACE("[!] ALL PAGES - base: 0x%p, sz: %lu, state: 0x%ulX, protect: 0x%lX",
-                        mem_basic_inf.BaseAddress,
-                        mem_basic_inf.RegionSize,
-                        mem_basic_inf.State,
-                        mem_basic_inf.Protect);
+        if (NTSTATUS status = ZwQueryVirtualMemory(ZwCurrentProcess(),
+                                                   (PVOID) (cur_page_addr),
+                                                   MemoryBasicInformation,
+                                                   &mem_basic_inf,
+                                                   sizeof(mem_basic_inf),
+                                                   NULL);
+            !NT_SUCCESS(status)) {
+            break;
         }
-        KeDetachProcess();
-        (ObfDereferenceObject)(process);
-    } __except (1) {
-        KeDetachProcess();
-        //(ObfDereferenceObject)(process);
-        //return page_iter > 0 ? STATUS_SUCCESS : STATUS_NOT_FOUND;
+
+        if (mem_basic_inf.State == MEM_COMMIT && mem_basic_inf.Protect != PAGE_NOACCESS && !(mem_basic_inf.Protect & PAGE_GUARD)) {
+            if (!(page_iter < page_array_sz)) {
+                PRINT_ERROR("[!] Page container is too small. Size: 0x%llX. Current iteration: 0x%lX", page_array_sz, page_iter);
+                return STATUS_ARRAY_BOUNDS_EXCEEDED;
+            }
+            (*args->Pages)[page_iter++] = {mem_basic_inf.BaseAddress, (DWORD) mem_basic_inf.RegionSize};
+
+            PRINT_DEBUG("[!] Accessible page - base: 0x%p, sz: 0x%lX", mem_basic_inf.BaseAddress, mem_basic_inf.RegionSize);
+            continue;
+        }
+        PRINT_TRACE("[!] Page - base: 0x%p, sz: 0x%llX, state: 0x%lX, protect: 0x%lX",
+                    mem_basic_inf.BaseAddress,
+                    mem_basic_inf.RegionSize,
+                    mem_basic_inf.State,
+                    mem_basic_inf.Protect);
     }
+    (ObfDereferenceObject)(process);
+    PRINT_DEBUG("[!] Pages size: %lu", page_iter + 1);
     return page_iter > 0 ? STATUS_SUCCESS : STATUS_NOT_FOUND;
 }
 
@@ -243,10 +231,10 @@ NTSTATUS ListPages(PVOID base, DWORD size,  PAGE* const& pages) {
             return STATUS_UNSUCCESSFUL;
         }
         if (mem_basic_inf.State == MEM_COMMIT && mem_basic_inf.Protect != PAGE_NOACCESS && !(mem_basic_inf.Protect & PAGE_GUARD)) {
-            PRINT_DEBUG("[!] Accessible page - base: 0x%p, sz: %lu", mem_basic_inf.BaseAddress, mem_basic_inf.RegionSize);
+            PRINT_DEBUG("[!] Accessible page - base: 0x%p, sz: 0x%lX", mem_basic_inf.BaseAddress, mem_basic_inf.RegionSize);
             pages[page_iter++] = {mem_basic_inf.BaseAddress, (DWORD) mem_basic_inf.RegionSize};
         }
-        PRINT_TRACE("[!] ALL PAGES - base: 0x%p, sz: %lu, state: %lu, protect: %lu",
+        PRINT_TRACE("[!] ALL PAGES - base: 0x%p, sz: 0x%lX, state: %lu, protect: %lu",
                     mem_basic_inf.BaseAddress,
                     mem_basic_inf.RegionSize,
                     mem_basic_inf.State,

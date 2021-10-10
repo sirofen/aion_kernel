@@ -10,27 +10,34 @@ class shared_memory;
 
 class aik {
 public:
+    /* same as in typedef, don't change! */
+    static constexpr DWORD pages_ar_sz = 0x3FF;
+
     explicit aik();
-    int read_client_values(const Driver::Module& _game_module, const Driver::Module& _cryengine_module, AIK_READ& _aik_read);
-    int read_client_values(const Driver::Module& _game_module, const Driver::Module& _cryengine_module, DISPATCH_SHARED& _dispatch_shared);
-    int list_pages();
+    const int read_client_values(const Driver::Module& _game_module, const Driver::Module& _cryengine_module, AIK_READ& _aik_read);
+    const int read_client_values(const Driver::Module& _game_module, const Driver::Module& _cryengine_module, DISPATCH_SHARED& _dispatch_shared);
+    const Driver::PAGE* list_pages(const std::uintptr_t base, const std::uint64_t sz) const;
 
-    int write_client_values(const AIK_WRITE& _aik_write);
-    int write_client_values(const DISPATCH_SHARED& _dispatch_shared);
+    const int write_client_values(const AIK_WRITE& _aik_write);
+    const int write_client_values(const DISPATCH_SHARED& _dispatch_shared);
 
-    int read_shared_values(DISPATCH_SHARED& _pdispatch_shared_struct);
-    int write_shared_values(const DISPATCH_SHARED& _pdispatch_shared_struct);
+    const int read_shared_values(DISPATCH_SHARED& _pdispatch_shared_struct);
+    const int write_shared_values(const DISPATCH_SHARED& _pdispatch_shared_struct);
 
     bool init_shared_mutex(LPCTSTR name, AIK_INIT_APPROACH init_appr);
     bool init_shared_memory(LPCTSTR name, AIK_INIT_APPROACH init_appr);
 
-    int init_driver();
-    int attach_proc(const wchar_t* proc_name);
-    int get_proc_module(const wchar_t* module_name, Driver::Module& _module);
-    const std::uintptr_t find_pattern(std::uintptr_t addr, const std::size_t sz, const BYTE*&& pattern);
+    const int init_driver();
+    const int attach_proc(const wchar_t* proc_name);
+    const int get_proc_module(const wchar_t* module_name, Driver::Module& _module);
+    const std::uintptr_t find_pattern(std::uintptr_t addr, const std::size_t sz, const std::string& pattern);
+    const std::uintptr_t find_pattern(const Driver::PAGE* mem_pages, const std::string& pattern);
 
     template<typename... Args>
     void debug_wprintf(const wchar_t* format, Args&&... args) {
+        wprintf_s(format, std::forward<Args>(args)...);
+        wprintf_s(L"\n");
+        return;
         /* wait for previous value to flush */
         DISPATCH_SHARED _d_shd{};
         do {
@@ -49,8 +56,8 @@ private:
     std::unique_ptr<shared_mutex> m_shared_mutex;
     std::unique_ptr<shared_memory> m_shared_memory;
 
-    std::uintptr_t m_ptrs_cache[10]{};
+    std::uintptr_t m_ptrs_cache[10];
 
-    std::uintptr_t m_player_entity_pointer{};
-    std::uintptr_t m_target_entity_pointer{};
+    std::uintptr_t m_player_entity_pointer;
+    std::uintptr_t m_target_entity_pointer;
 };

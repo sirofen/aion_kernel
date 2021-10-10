@@ -15,16 +15,16 @@ constexpr BYTE pattern[] = {'p', '0x0', 'u', '0x0', 'n', '0x0', 'p', '0x0', 'c',
 constexpr auto read_sz = 10;
 BYTE new_bytes[read_sz];
 }
-
+#include <vector>
 int main() {
     aik aik;
 
-    if (!aik.init_shared_mutex(mutex_name, AIK_INIT_APPROACH::OPEN)) {
-        return -1;
-    }
-    if (!aik.init_shared_memory(file_mapping_name, AIK_INIT_APPROACH::OPEN)) {
-        return -1;
-    }
+    //if (!aik.init_shared_mutex(mutex_name, AIK_INIT_APPROACH::OPEN)) {
+    //    return -1;
+    //}
+    //if (!aik.init_shared_memory(file_mapping_name, AIK_INIT_APPROACH::OPEN)) {
+    //    return -1;
+    //}
 
     aik.debug_wprintf(L"[-] aiK client shared memory initialized");
 
@@ -50,16 +50,19 @@ int main() {
     //    Sleep(4000);
     //}
 
-    //Driver::Module aion_bin_module;
-    //while (auto status = aik.get_proc_module(L"", aion_bin_module) != 0) {
-    //    aik.debug_wprintf(L"Waiting for aion.bin module to load, status: 0x%lX", status);
-    //    Sleep(4000);
-    //    break;
-    //}
+    Driver::Module aion_bin_module;
+    while (auto status = aik.get_proc_module(L"libvlccore.dll", aion_bin_module) != 0) {
+        aik.debug_wprintf(L"Waiting for aion.bin module to load, status: 0x%lX", status);
+        Sleep(4000);
+        break;
+    }
 
     //auto _pattern_addr = aik.find_pattern(0xEB7DC000, 4000, AION_VARS::aion_con_disable_console_pattern);
     //wprintf_s(L"0x%llX", _pattern_addr);
-    aik.list_pages();
+    const auto pages = aik.list_pages(0, MAXULONGLONG);
+    static constexpr BYTE pattern[] = {0x74, 0x74, 0x74, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3A, 0x3A, 0x3A, 0x80, 0x4F, 0x4F, 0x4F, 0xAE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x74, 0x74, 0x74, 0xFF, 0x74, 0x74, 0x74, 0xFF, 0x74, 0x74, 0x74, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x74, 0x74, 0x74, 0xFF, 0x76, 0x76, 0x76, 0xF1, 0x11, 0x11, 0x11, 0x26, 0x00, 0x00, 0x00, 0x00, 0x3A, 0x3A, 0x3A, 0x80, 0xE4, 0xE4, 0xE4, 0xF5, 0x74, 0x74, 0x74, 0xFE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x74, 0x74, 0x74, 0xFF, 0xEE, 0xEE, 0xEE, 0xFF, 0x74, 0x74, 0x74, 0xFF};
+    auto addr = aik.find_pattern(pages, std::string(std::begin(pattern), std::end(pattern)));
+    printf("pattern addr: 0x%llX", addr);
     return 0;
     DISPATCH_SHARED _d_shd;
     do {

@@ -3,11 +3,15 @@
 
 #include <fstream>
 
+namespace {
+    constexpr auto dump_dir = L"dump";
+}
+
 #define BUFSIZE MAX_PATH
 void write_file(const BYTE* const& buffer, const std::size_t& length, const wchar_t*&& prefix = L"") {
     TCHAR dir_buffer[BUFSIZE];
     GetCurrentDirectory(BUFSIZE, dir_buffer);
-    PathAppend(dir_buffer, L"dump");
+    PathAppend(dir_buffer, dump_dir);
     CreateDirectory(dir_buffer, NULL);
     SYSTEMTIME time;
     GetSystemTime(&time);
@@ -28,7 +32,7 @@ void Driver::dump_memory(std::uintptr_t base, std::size_t length, const wchar_t*
     write_file(buffer, length, std::move(prefix));
 }
 
-const std::uintptr_t Driver::FindPattern(const std::uintptr_t& base, const std::size_t& length, const BYTE*&& pattern, const BYTE& mask) {
+const std::uintptr_t Driver::FindPattern(const std::uintptr_t& base, const std::size_t& length, const std::string& pattern, const BYTE& mask) {
 	//wprintf_s(L"Searching - base: 0x%llx, length: %d ", base, length);
     BYTE* buffer = new BYTE[length]();
 	if (this->ReadMem(base, buffer, length) != STATUS_SUCCESS) {
@@ -39,7 +43,7 @@ const std::uintptr_t Driver::FindPattern(const std::uintptr_t& base, const std::
 #ifdef AION_KERNEL_DEBUG_SAVE_PATTERN_BUFFER
     write_file(buffer, length, L"module");
 #endif
-	const auto& pattern_i_max = sizeof(pattern) - 1;
+	const auto& pattern_i_max = pattern.size() - 1;
 	std::size_t pattern_i = 0;
 	for (std::size_t i = 0; i < length; i++) {
 		if (pattern_i == pattern_i_max) {
@@ -55,29 +59,31 @@ const std::uintptr_t Driver::FindPattern(const std::uintptr_t& base, const std::
 	delete[] buffer;
 	return 0;
 }
-const std::uintptr_t Driver::FindPatternModule(const Module& module, const BYTE*&& pattern, const std::size_t& sz_phys_mode, const BYTE& mask) {
+const std::uintptr_t Driver::FindPattern(const Module& module, const std::string& pattern, const std::size_t& sz_phys_mode, const BYTE& mask) {
 	if (bPhysicalMode) {
         if (sz_phys_mode != 0) {
-            return FindPattern(module.addr, sz_phys_mode, std::move(pattern), mask);
+            return FindPattern(module.addr, sz_phys_mode, pattern, mask);
 		}
         ULONGLONG phys_mem_sz;
 		if (!GetPhysicallyInstalledSystemMemory(&phys_mem_sz)) {
             return 0;
 		}
         wprintf(L" Phys mem sz: %llu ", phys_mem_sz *= 1024);
-        return FindPattern(module.addr, phys_mem_sz -= module.addr, std::move(pattern), mask);
+        return FindPattern(module.addr, phys_mem_sz -= module.addr, pattern, mask);
 	}
 	if (!module.pages.empty()) {
         for (const auto& [base, sz] : module.pages) {
-            if (const auto& addr = FindPattern(base, sz, std::move(pattern), mask); addr != 0) {
+            if (auto addr = FindPattern(base, sz, pattern, mask); addr != 0) {
                 return addr;
             }
         }
 	}
 
-    return FindPattern(module.addr, module.size, std::move(pattern), mask);
+    return FindPattern(module.addr, module.size, pattern, mask);
 }
-
+const std::uintptr_t Driver::FindPattern(const PAGE& _p, const std::string& pattern, const BYTE& mask) {
+    return FindPattern((uintptr_t)_p.Address, _p.Size, pattern, mask);
+}
 //namespace {
 //constexpr auto page_arr_sz = 0x20;
 //}

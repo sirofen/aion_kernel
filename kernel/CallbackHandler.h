@@ -64,8 +64,8 @@ typedef struct _REQUEST_FREE {
 } REQUEST_FREE, * PREQUEST_FREE;
 
 typedef struct _PAGE {
-    void* Address;
-    DWORD Size;
+    PVOID Address;
+    ULONGLONG Size;
 } PAGE, *PPAGE;
 
 typedef struct _REQUEST_MODULE {
@@ -85,8 +85,8 @@ typedef struct _REQUEST_MAINBASE {
 typedef struct _REQUEST_PAGES {
     DWORD ProcessId;
     PVOID ModuleBase;
-    DWORD ModuleSize;
-    PAGE Pages[0xFF];
+    ULONGLONG ModuleSize;
+    PAGE (*Pages)[0x3FF];
 } REQUEST_PAGES, *PREQUEST_PAGES;
 
 NTSTATUS CallbackWRITE(PREQUEST_WRITE args);

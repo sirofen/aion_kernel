@@ -85,11 +85,20 @@ public:
         return this->SendRequest(REQUEST_TYPE::READ, &req);
     }
 
-	const NTSTATUS GetPages(const std::uintptr_t base, const DWORD sz) {
+    typedef struct _PAGE {
+        PVOID Address;
+        ULONGLONG Size;
+        const bool empty() const noexcept {
+            return !Address || !Size;
+        }
+    } PAGE, *PPAGE;
+
+	const NTSTATUS GetPages(PAGE(& pages)[0x3FF], const std::uintptr_t base, const ULONGLONG sz) {
         REQUEST_PAGES req;
         req.ProcessId = this->ProcessId;
         req.ModuleBase = reinterpret_cast<PVOID>(base);
         req.ModuleSize = sz;
+        req.Pages = &pages;
         return this->SendRequest(REQUEST_TYPE::PAGES, &req);
 	}
 
@@ -135,9 +144,9 @@ public:
 		}
 	};
 
-	const std::uintptr_t FindPattern(const std::uintptr_t& base, const std::size_t& length, const BYTE*&& pattern, const BYTE& mask = 0);
-    const std::uintptr_t FindPatternModule(const Module& module, const BYTE*&& pattern, const std::size_t& sz_phys_mode = 0, const BYTE& mask = 0);
-    //const std::map<std::uintptr_t, unsigned long> GetModulePages(const Module& module);
+	const std::uintptr_t FindPattern(const std::uintptr_t& base, const std::size_t& length, const std::string& pattern, const BYTE& mask = 0);
+    const std::uintptr_t FindPattern(const Module& module, const std::string& pattern, const std::size_t& sz_phys_mode = 0, const BYTE& mask = 0);
+    const std::uintptr_t FindPattern(const PAGE& _p, const std::string& pattern, const BYTE& mask = 0);
 
 	const Module GetModuleBase(const wchar_t* ModuleName = 0, bool ListPages = false) {
 		if (bPhysicalMode) {
@@ -235,14 +244,6 @@ private:
 		PVOID Address;
 	} REQUEST_FREE, * PREQUEST_FREE;
 
-    typedef struct _PAGE {
-        void* Address;
-        DWORD Size;
-        const bool empty() const noexcept {
-            return !Address || !Size;
-        }
-    } PAGE, *PPAGE;
-
 	typedef struct _REQUEST_MODULE {
 		DWORD ProcessId;
 		WCHAR Module[0xFF];
@@ -260,8 +261,8 @@ private:
 	typedef struct _REQUEST_PAGES {
         DWORD ProcessId;
         PVOID ModuleBase;
-        DWORD ModuleSize;
-        PAGE Pages[0xFF];
+        ULONGLONG ModuleSize;
+        PAGE (*Pages)[0x3FF];
     } REQUEST_PAGES, *PREQUEST_PAGES;
 };
 
