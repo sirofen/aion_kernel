@@ -365,6 +365,7 @@ FodyWeavers.xsd
 /build/
 /usermode/dll_entry/
 /usermode/cmake-build-release/
+/usermode/dump/
 /usermode/.idea/
 /.idea/
 /StructLayoutSettings.json

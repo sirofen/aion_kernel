@@ -169,6 +169,10 @@ NTSTATUS CallbackFREE(PREQUEST_FREE args)
 	return status;
 }
 
+namespace{
+constexpr DWORD page_array_sz = 0x3FF;
+}
+
 NTSTATUS CallbackPAGES(PREQUEST_PAGES args) {
     PEPROCESS process = NULL;
 
@@ -177,10 +181,12 @@ NTSTATUS CallbackPAGES(PREQUEST_PAGES args) {
         return status;
     }
 
-	KAPC_STATE apc;
+    KAPC_STATE apc;
 
-    static constexpr DWORD page_array_sz = 0x3FF;
     PRINT_DEBUG("[!] page_array_sz: 0x%lX", page_array_sz);
+    
+    PPAGE _ppages = (PPAGE)ExAllocatePool(PagedPool, page_array_sz * sizeof(PAGE));
+    RtlZeroMemory(_ppages, page_array_sz * sizeof(PAGE));
 
     const auto module_base = (UINT_PTR) args->ModuleBase;
     const auto module_size = args->ModuleSize;
@@ -189,39 +195,47 @@ NTSTATUS CallbackPAGES(PREQUEST_PAGES args) {
     MEMORY_BASIC_INFORMATION mem_basic_inf{};
 
     DWORD page_iter = 0;
-    KeStackAttachProcess(process, &apc);
-    for (auto cur_page_addr = module_base;
-         cur_page_addr < module_base + module_size;
-         cur_page_addr = (ULONG_PTR) mem_basic_inf.BaseAddress + mem_basic_inf.RegionSize) {
+    __try {
+        KeStackAttachProcess(process, &apc);
+        for (auto cur_page_addr = module_base;
+             cur_page_addr < module_base + module_size;
+             cur_page_addr = (ULONG_PTR) mem_basic_inf.BaseAddress + mem_basic_inf.RegionSize) {
 
-        if (NTSTATUS status = ZwQueryVirtualMemory(ZwCurrentProcess(),
-                                                   (PVOID) (cur_page_addr),
-                                                   MemoryBasicInformation,
-                                                   &mem_basic_inf,
-                                                   sizeof(mem_basic_inf),
-                                                   NULL);
-            !NT_SUCCESS(status)) {
-            break;
-        }
-
-        if (mem_basic_inf.State == MEM_COMMIT && mem_basic_inf.Protect != PAGE_NOACCESS && !(mem_basic_inf.Protect & PAGE_GUARD)) {
-            if (!(page_iter < page_array_sz)) {
-                PRINT_ERROR("[!] Page container is too small. Size: 0x%llX. Current iteration: 0x%lX", page_array_sz, page_iter);
-                return STATUS_ARRAY_BOUNDS_EXCEEDED;
+            if (NTSTATUS status = ZwQueryVirtualMemory(ZwCurrentProcess(),
+                                                       (PVOID) (cur_page_addr),
+                                                       MemoryBasicInformation,
+                                                       &mem_basic_inf,
+                                                       sizeof(mem_basic_inf),
+                                                       NULL);
+                !NT_SUCCESS(status)) {
+                break;
             }
-            (args->Pages)[page_iter++] = {mem_basic_inf.BaseAddress, (DWORD) mem_basic_inf.RegionSize};
 
-            PRINT_DEBUG("[!] Accessible page - base: 0x%p, sz: 0x%lX", mem_basic_inf.BaseAddress, mem_basic_inf.RegionSize);
-            continue;
+            if (mem_basic_inf.State == MEM_COMMIT && mem_basic_inf.Protect != PAGE_NOACCESS && !(mem_basic_inf.Protect & PAGE_GUARD)) {
+                if (!(page_iter < page_array_sz)) {
+                    PRINT_ERROR("[!] Page container is too small. Size: 0x%llX. Current iteration: 0x%lX", page_array_sz, page_iter);
+                    return STATUS_ARRAY_BOUNDS_EXCEEDED;
+                }
+                //page_iter++;
+                _ppages[page_iter++] = {mem_basic_inf.BaseAddress, (DWORD) mem_basic_inf.RegionSize};
+
+                PRINT_DEBUG("[!] Accessible page - base: 0x%p, sz: 0x%lX", mem_basic_inf.BaseAddress, mem_basic_inf.RegionSize);
+                continue;
+            }
+            PRINT_TRACE("[!] Page - base: 0x%p, sz: 0x%llX, state: 0x%lX, protect: 0x%lX",
+                        mem_basic_inf.BaseAddress,
+                        mem_basic_inf.RegionSize,
+                        mem_basic_inf.State,
+                        mem_basic_inf.Protect);
         }
-        PRINT_TRACE("[!] Page - base: 0x%p, sz: 0x%llX, state: 0x%lX, protect: 0x%lX",
-                    mem_basic_inf.BaseAddress,
-                    mem_basic_inf.RegionSize,
-                    mem_basic_inf.State,
-                    mem_basic_inf.Protect);
+    } __finally {
+        KeUnstackDetachProcess(&apc);
+        RtlCopyMemory(args->Pages, _ppages, page_array_sz * sizeof(PAGE));
+        //SIZE_T sz;
+        //MmCopyMemory(args->Pages, MM_COPY_ADDRESS{&_ppages}, page_array_sz * sizeof(PAGE), MM_COPY_MEMORY_VIRTUAL, &sz);
+        ExFreePool(_ppages);
+        (ObfDereferenceObject)(process);
     }
-    KeUnstackDetachProcess(&apc);
-    (ObfDereferenceObject)(process);
     PRINT_DEBUG("[!] Pages size: %lu", page_iter + 1);
     return page_iter > 0 ? STATUS_SUCCESS : STATUS_NOT_FOUND;
 }

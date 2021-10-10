@@ -30,8 +30,8 @@ public:
     const int init_driver();
     const int attach_proc(const wchar_t* proc_name);
     const int get_proc_module(const wchar_t* module_name, Driver::Module& _module);
-    const std::uintptr_t find_pattern(std::uintptr_t addr, const std::size_t sz, const std::string& pattern);
-    const std::uintptr_t find_pattern(const Driver::PAGE* mem_pages, const std::string& pattern);
+    const std::uintptr_t find_pattern(std::uintptr_t addr, const std::size_t sz, const ustring& pattern);
+    const std::uintptr_t find_pattern(const Driver::PAGE* mem_pages, const ustring& pattern);
 
     template<typename... Args>
     void debug_wprintf(const wchar_t* format, Args&&... args) {

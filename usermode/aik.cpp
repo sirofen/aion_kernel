@@ -107,7 +107,7 @@ const Driver::PAGE* aik::list_pages(const std::uintptr_t base, const std::uint64
         if (m_pages[i].empty()) {
             break;
         }
-        printf("N[%u]: page addr: 0x%p, sz: %llu\n", ++count, m_pages[i].Address, m_pages[i].Size);
+        //debug_wprintf(L"N[%u]: page addr: 0x%p, sz: %llu\n", ++count, m_pages[i].Address, m_pages[i].Size);
     }
     return m_pages;
 }
@@ -287,16 +287,16 @@ const int aik::get_proc_module(const wchar_t* module_name, Driver::Module& _modu
     debug_wprintf(L"[-] %s addr: 0x%llX, sz: %u", module_name, _module.addr, _module.size);
     return 0;
 }
-const std::uintptr_t aik::find_pattern(const std::uintptr_t addr, const std::size_t sz, const std::string& pattern) {
+const std::uintptr_t aik::find_pattern(const std::uintptr_t addr, const std::size_t sz, const ustring& pattern) {
     return driver->FindPattern(addr, sz, pattern);
 }
-const std::uintptr_t aik::find_pattern(const Driver::PAGE* mem_pages, const std::string& pattern) {
+const std::uintptr_t aik::find_pattern(const Driver::PAGE* mem_pages, const ustring& pattern) {
     for (DWORD i = 0; i < aik::pages_ar_sz; i++) {
         const auto& _page = mem_pages[i];
         if (_page.empty()) {
             break;
         }
-        printf("seraching pattern in: 0x%llX, sz: %llu\n", _page.Address, _page.Size);
+        //debug_wprintf(L"[!] Seraching pattern in: 0x%llX, sz: %llu\n", _page.Address, _page.Size);
         if (auto pattern_addr = driver->FindPattern(_page, pattern)) {
             return pattern_addr;
         }

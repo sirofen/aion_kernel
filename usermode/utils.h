@@ -1,4 +1,5 @@
 #pragma once
+typedef std::basic_string<unsigned char> ustring;
 
 inline void _print_bytes_line(const BYTE*&& arr, std::uintptr_t base, const BYTE& n_lm_l, const char delim) {
     for (std::size_t i = 0, arr_sz = sizeof(arr); i < arr_sz; i++) {

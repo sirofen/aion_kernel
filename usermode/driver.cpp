@@ -17,7 +17,7 @@ void write_file(const BYTE* const& buffer, const std::size_t& length, const wcha
     GetSystemTime(&time);
     wchar_t _filebane_char_buf[BUFSIZE];
     swprintf_s(_filebane_char_buf, L"%s\\%s__%u-%u-%u_%u-%u-%u.bin", dir_buffer, prefix, time.wYear, time.wMonth, time.wDay, time.wHour, time.wMinute, time.wSecond);
-    wprintf_s(L"%s", _filebane_char_buf);
+    wprintf_s(L"----Dump buffer----\n\t%s\n", _filebane_char_buf);
     std::ofstream buf_file(_filebane_char_buf, std::ios::binary | std::ios::out);
     buf_file.write((char*) buffer, length);
     buf_file.close();
@@ -32,7 +32,7 @@ void Driver::dump_memory(std::uintptr_t base, std::size_t length, const wchar_t*
     write_file(buffer, length, std::move(prefix));
 }
 
-const std::uintptr_t Driver::FindPattern(const std::uintptr_t& base, const std::size_t& length, const std::string& pattern, const BYTE& mask) {
+const std::uintptr_t Driver::FindPattern(const std::uintptr_t& base, const std::size_t& length, const ustring& pattern, const BYTE& mask) {
 	//wprintf_s(L"Searching - base: 0x%llx, length: %d ", base, length);
     BYTE* buffer = new BYTE[length]();
 	if (this->ReadMem(base, buffer, length) != STATUS_SUCCESS) {
@@ -59,7 +59,7 @@ const std::uintptr_t Driver::FindPattern(const std::uintptr_t& base, const std::
 	delete[] buffer;
 	return 0;
 }
-const std::uintptr_t Driver::FindPattern(const Module& module, const std::string& pattern, const std::size_t& sz_phys_mode, const BYTE& mask) {
+const std::uintptr_t Driver::FindPattern(const Module& module, const ustring& pattern, const std::size_t& sz_phys_mode, const BYTE& mask) {
 	if (bPhysicalMode) {
         if (sz_phys_mode != 0) {
             return FindPattern(module.addr, sz_phys_mode, pattern, mask);
@@ -81,7 +81,7 @@ const std::uintptr_t Driver::FindPattern(const Module& module, const std::string
 
     return FindPattern(module.addr, module.size, pattern, mask);
 }
-const std::uintptr_t Driver::FindPattern(const PAGE& _p, const std::string& pattern, const BYTE& mask) {
+const std::uintptr_t Driver::FindPattern(const PAGE& _p, const ustring& pattern, const BYTE& mask) {
     return FindPattern((uintptr_t)_p.Address, _p.Size, pattern, mask);
 }
 //namespace {

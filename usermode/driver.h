@@ -144,9 +144,9 @@ public:
 		}
 	};
 
-	const std::uintptr_t FindPattern(const std::uintptr_t& base, const std::size_t& length, const std::string& pattern, const BYTE& mask = 0);
-    const std::uintptr_t FindPattern(const Module& module, const std::string& pattern, const std::size_t& sz_phys_mode = 0, const BYTE& mask = 0);
-    const std::uintptr_t FindPattern(const PAGE& _p, const std::string& pattern, const BYTE& mask = 0);
+	const std::uintptr_t FindPattern(const std::uintptr_t& base, const std::size_t& length, const ustring& pattern, const BYTE& mask = 0);
+    const std::uintptr_t FindPattern(const Module& module, const ustring& pattern, const std::size_t& sz_phys_mode = 0, const BYTE& mask = 0);
+    const std::uintptr_t FindPattern(const PAGE& _p, const ustring& pattern, const BYTE& mask = 0);
 
 	const Module GetModuleBase(const wchar_t* ModuleName = 0, bool ListPages = false) {
 		if (bPhysicalMode) {
