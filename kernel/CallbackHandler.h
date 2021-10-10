@@ -86,7 +86,7 @@ typedef struct _REQUEST_PAGES {
     DWORD ProcessId;
     PVOID ModuleBase;
     ULONGLONG ModuleSize;
-    PAGE (*Pages)[0x3FF];
+    PPAGE Pages;
 } REQUEST_PAGES, *PREQUEST_PAGES;
 
 NTSTATUS CallbackWRITE(PREQUEST_WRITE args);

@@ -98,7 +98,7 @@ const int aik::read_client_values(const Driver::Module& _game_module, const Driv
     return 0;
 }
 const Driver::PAGE* aik::list_pages(const std::uintptr_t base, const std::uint64_t sz) const {
-    static Driver::PAGE m_pages[pages_ar_sz];
+    static Driver::PAGE* m_pages = new Driver::PAGE[pages_ar_sz]{};
     //0xFFFFFFFFFFFFFFFF
     //MAXULONGLONG
     driver->GetPages(m_pages, base, sz);

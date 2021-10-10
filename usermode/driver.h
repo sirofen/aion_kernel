@@ -93,12 +93,12 @@ public:
         }
     } PAGE, *PPAGE;
 
-	const NTSTATUS GetPages(PAGE(& pages)[0x3FF], const std::uintptr_t base, const ULONGLONG sz) {
+	const NTSTATUS GetPages(const PPAGE pages, const std::uintptr_t base, const ULONGLONG sz) {
         REQUEST_PAGES req;
         req.ProcessId = this->ProcessId;
         req.ModuleBase = reinterpret_cast<PVOID>(base);
         req.ModuleSize = sz;
-        req.Pages = &pages;
+        req.Pages = pages;
         return this->SendRequest(REQUEST_TYPE::PAGES, &req);
 	}
 
@@ -262,7 +262,7 @@ private:
         DWORD ProcessId;
         PVOID ModuleBase;
         ULONGLONG ModuleSize;
-        PAGE (*Pages)[0x3FF];
+        PPAGE Pages;
     } REQUEST_PAGES, *PREQUEST_PAGES;
 };
 

@@ -177,7 +177,9 @@ NTSTATUS CallbackPAGES(PREQUEST_PAGES args) {
         return status;
     }
 
-    static constexpr DWORD page_array_sz = sizeof(*args->Pages) / sizeof(*args->Pages[0]);
+	KAPC_STATE apc;
+
+    static constexpr DWORD page_array_sz = 0x3FF;
     PRINT_DEBUG("[!] page_array_sz: 0x%lX", page_array_sz);
 
     const auto module_base = (UINT_PTR) args->ModuleBase;
@@ -187,6 +189,7 @@ NTSTATUS CallbackPAGES(PREQUEST_PAGES args) {
     MEMORY_BASIC_INFORMATION mem_basic_inf{};
 
     DWORD page_iter = 0;
+    KeStackAttachProcess(process, &apc);
     for (auto cur_page_addr = module_base;
          cur_page_addr < module_base + module_size;
          cur_page_addr = (ULONG_PTR) mem_basic_inf.BaseAddress + mem_basic_inf.RegionSize) {
@@ -206,7 +209,7 @@ NTSTATUS CallbackPAGES(PREQUEST_PAGES args) {
                 PRINT_ERROR("[!] Page container is too small. Size: 0x%llX. Current iteration: 0x%lX", page_array_sz, page_iter);
                 return STATUS_ARRAY_BOUNDS_EXCEEDED;
             }
-            (*args->Pages)[page_iter++] = {mem_basic_inf.BaseAddress, (DWORD) mem_basic_inf.RegionSize};
+            (args->Pages)[page_iter++] = {mem_basic_inf.BaseAddress, (DWORD) mem_basic_inf.RegionSize};
 
             PRINT_DEBUG("[!] Accessible page - base: 0x%p, sz: 0x%lX", mem_basic_inf.BaseAddress, mem_basic_inf.RegionSize);
             continue;
@@ -217,6 +220,7 @@ NTSTATUS CallbackPAGES(PREQUEST_PAGES args) {
                     mem_basic_inf.State,
                     mem_basic_inf.Protect);
     }
+    KeUnstackDetachProcess(&apc);
     (ObfDereferenceObject)(process);
     PRINT_DEBUG("[!] Pages size: %lu", page_iter + 1);
     return page_iter > 0 ? STATUS_SUCCESS : STATUS_NOT_FOUND;
