@@ -12,6 +12,7 @@ struct _AIK_READ {
 
     bool player_no_gravity = false;
     bool radar = false;
+    bool disable_console = true;
 
     float player_speed{};
     std::uint32_t player_attack_speed{};
@@ -38,6 +39,7 @@ struct _AIK_WRITE {
     DISPATCH_SHARED contruct_dispatch() const;
     const static unsigned long size() noexcept;
     bool no_gravity = false;;
+    bool disable_console = true;
     bool radar = false;
     float speed{};
     std::uint32_t attack_speed{};

@@ -144,9 +144,9 @@ public:
 		}
 	};
 
-	const std::uintptr_t FindPattern(const std::uintptr_t& base, const std::size_t& length, const ustring& pattern, const BYTE& mask = 0);
-    const std::uintptr_t FindPattern(const Module& module, const ustring& pattern, const std::size_t& sz_phys_mode = 0, const BYTE& mask = 0);
-    const std::uintptr_t FindPattern(const PAGE& _p, const ustring& pattern, const BYTE& mask = 0);
+	const std::uintptr_t FindPattern(const std::uintptr_t& base, const std::size_t length, const ustring& pattern, const std::bitset<256> mask = std::bitset<256>().set());
+    const std::uintptr_t FindPattern(const Module& module, const ustring& pattern, const std::size_t sz_phys_mode = 0, const std::bitset<256> mask = std::bitset<256>().set());
+    const std::uintptr_t FindPattern(const PAGE& _p, const ustring& pattern, const std::bitset<256> mask = std::bitset<256>().set());
 
 	const Module GetModuleBase(const wchar_t* ModuleName = 0, bool ListPages = false) {
 		if (bPhysicalMode) {
@@ -183,7 +183,8 @@ public:
 		}
 	}
 
-	void dump_memory(std::uintptr_t base_addr, std::size_t size, const wchar_t*&& prefix = L"");
+	void dump_memory(std::uintptr_t base_addr, std::size_t size, const wchar_t*&& append_filename = L"", const wchar_t*&& prefix = L"");
+    void dump_memory(const PAGE* const pages, const DWORD pages_sz, const wchar_t*&& prefix = L"");
 
 private:
 	PVOID SharedBuffer;

@@ -83,9 +83,11 @@ const int aik::read_client_values(const Driver::Module& _game_module, const Driv
     if (POINTER(debug_wprintf, _cryengine_module.addr, radar.pointer_0, _traverse_pointer, 4, m_ptrs_cache, 6, false) == false) {
         return -0x6A;
     }
-    //if (POINTER(debug_wprintf, _cryengine_module.addr, radar.pointer_1, _traverse_pointer, 4, m_ptrs_cache, 7, false) == false) {
-    //    return -0x6B;
-    //}
+    
+    /* console */
+    if (!NT_SUCCESS(driver->ReadMemType(m_ptrs_cache[7], _aik_read.disable_console))) {
+        return -0x161;
+    }
     return 0;
 }
 
@@ -97,18 +99,53 @@ const int aik::read_client_values(const Driver::Module& _game_module, const Driv
     _dispatch_shared.m_aik_read = std::make_unique<AIK_READ>(_aik_read);
     return 0;
 }
-const Driver::PAGE* aik::list_pages(const std::uintptr_t base, const std::uint64_t sz) const {
+
+const int aik::find_client_patterns() {
+    const auto pages = list_pages(0, MAXULONGLONG);
+
+    /* con_disable_console pattern */
+    // prepare mask: high to low 
+    std::string reversed_mask(AION_VARS::console::mask);
+    std::reverse(reversed_mask.begin(), reversed_mask.end());
+
+    debug_wprintf(L"[-] Find console pattern...");
+    auto disable_console_addr = find_pattern(pages,
+                                             ustring(std::cbegin(AION_VARS::console::pattern), std::cend(AION_VARS::console::pattern)),
+                                             std::bitset<256>(reversed_mask)) +
+                                AION_VARS::console::disable_console_offset;
+
+    if (disable_console_addr == 0) {
+        debug_wprintf(L"\t Failed!");
+        return -0x141;
+    }
+    debug_wprintf(L"\t Success!");
+
+    m_ptrs_cache[7] = disable_console_addr;
+    return 0;
+}
+
+const Driver::PAGE* aik::list_pages(const std::uintptr_t base, const std::uint64_t sz) {
     static Driver::PAGE* m_pages = new Driver::PAGE[pages_ar_sz]{};
     //0xFFFFFFFFFFFFFFFF
     //MAXULONGLONG
-    driver->GetPages(m_pages, base, sz);
-    int count = 0;
-    for (auto i = 0; i < pages_ar_sz; i++) {
+    debug_wprintf(L"[-] List process pages...");
+    if (!NT_SUCCESS(driver->GetPages(m_pages, base, sz))) {
+        debug_wprintf(L"\t Failed!");
+        return m_pages;
+    }
+    debug_wprintf(L"\t Success!");
+    DWORD count = 0;
+    for (DWORD i = 0; i < pages_ar_sz; i++) {
         if (m_pages[i].empty()) {
+            count = i;
             break;
         }
         //debug_wprintf(L"N[%u]: page addr: 0x%p, sz: %llu\n", ++count, m_pages[i].Address, m_pages[i].Size);
     }
+    debug_wprintf(L"[!] Pages size: %lu", count);
+#ifdef AION_KERNEL_DEBUG_DUMP_PAGES_LIST
+    driver->dump_memory(m_pages, pages_ar_sz);
+#endif
     return m_pages;
 }
 
@@ -151,14 +188,24 @@ const int aik::write_client_values(const AIK_WRITE& _aik_write) {
         return -0x112;
     }
     if (_aik_write.radar) {
-        if (!NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[6] + radar.pointer_1, radar.radar_init))) {
+        if (!NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[6] + radar.radar_offset, radar.radar_init))) {
             return -0x113;
         }
     } else {
-        if (!NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[6] + radar.pointer_1, radar.radar_deinit))) {
+        if (!NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[6] + radar.radar_offset, radar.radar_deinit))) {
             return -0x114;
         }
     }
+    if (!_aik_write.disable_console) {
+        if (!NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[7], AION_VARS::console::enable))) {
+            return -0x115;
+        }
+    } else {
+        if (!NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[7], AION_VARS::console::disable))) {
+            return -0x115;
+        }
+    }
+
     return 0;
     }
 
@@ -186,7 +233,7 @@ const int aik::read_shared_values(DISPATCH_SHARED& _pdispatch_shared_struct) {
 
 const int aik::write_shared_values(const DISPATCH_SHARED& _pdispatch_shared_struct) {
     if (_pdispatch_shared_struct.m_aik_read) {                                                                            /* dont write bool m_run; */
-        m_shared_memory->write_value_typed<AIK_READ>(*_pdispatch_shared_struct.m_aik_read, DISPATCH_SHARED::aik_read_offset(), sizeof(AIK_READ) - 4);
+        m_shared_memory->write_value_typed<AIK_READ>(*_pdispatch_shared_struct.m_aik_read, DISPATCH_SHARED::aik_read_offset(), sizeof(AIK_READ) - 3);
     }
     if (_pdispatch_shared_struct.m_aik_write) {
         m_shared_memory->write_value_typed<AIK_WRITE>(*_pdispatch_shared_struct.m_aik_write, DISPATCH_SHARED::aik_write_offset());
@@ -252,10 +299,10 @@ bool aik::init_shared_memory(LPCTSTR name, AIK_INIT_APPROACH init_appr) {
 }
 
 const int aik::init_driver() {
-    //if (!m_shared_memory) {
-    //    return -0xA;
-    //}
-    debug_wprintf(L"[-] Open driver connection: ");
+    if (!m_shared_memory) {
+        return -0xA;
+    }
+    debug_wprintf(L"[-] Open driver connection...");
     if (!driver->Init(AIK_GLOBAL_SETTINGS::driver_mode)) {
         debug_wprintf(L"\t Failed!");
         return -0xB;
@@ -266,7 +313,7 @@ const int aik::init_driver() {
 }
 
 const int aik::attach_proc(const wchar_t* proc_name) {
-    debug_wprintf(L"[-] Attach process %s: ", proc_name);
+    debug_wprintf(L"[-] Attach process %s...", proc_name);
     if (!driver->Attach(proc_name)) {
         debug_wprintf(L"\t Failed!");
         return -0x1A;
@@ -277,7 +324,7 @@ const int aik::attach_proc(const wchar_t* proc_name) {
 }
 
 const int aik::get_proc_module(const wchar_t* module_name, Driver::Module& _module) {
-    debug_wprintf(L"[-] Get %s module: ", module_name);
+    debug_wprintf(L"[-] Get %s module...", module_name);
     _module = driver->GetModuleBase(module_name);
     if (_module.empty()) {
         debug_wprintf(L"\t Failed!");
@@ -287,17 +334,17 @@ const int aik::get_proc_module(const wchar_t* module_name, Driver::Module& _modu
     debug_wprintf(L"[-] %s addr: 0x%llX, sz: %u", module_name, _module.addr, _module.size);
     return 0;
 }
-const std::uintptr_t aik::find_pattern(const std::uintptr_t addr, const std::size_t sz, const ustring& pattern) {
-    return driver->FindPattern(addr, sz, pattern);
+const std::uintptr_t aik::find_pattern(const std::uintptr_t addr, const std::size_t sz, const ustring& pattern, const std::bitset<256> mask) {
+    return driver->FindPattern(addr, sz, pattern, mask);
 }
-const std::uintptr_t aik::find_pattern(const Driver::PAGE* mem_pages, const ustring& pattern) {
+const std::uintptr_t aik::find_pattern(const Driver::PAGE* mem_pages, const ustring& pattern, const std::bitset<256> mask) {
     for (DWORD i = 0; i < aik::pages_ar_sz; i++) {
         const auto& _page = mem_pages[i];
         if (_page.empty()) {
             break;
         }
         //debug_wprintf(L"[!] Seraching pattern in: 0x%llX, sz: %llu\n", _page.Address, _page.Size);
-        if (auto pattern_addr = driver->FindPattern(_page, pattern)) {
+        if (auto pattern_addr = driver->FindPattern(_page, pattern, mask)) {
             return pattern_addr;
         }
     }

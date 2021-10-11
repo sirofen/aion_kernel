@@ -170,7 +170,7 @@ NTSTATUS CallbackFREE(PREQUEST_FREE args)
 }
 
 namespace{
-constexpr DWORD page_array_sz = 0x3FF;
+constexpr DWORD page_array_sz = 0xFFFF;
 }
 
 NTSTATUS CallbackPAGES(PREQUEST_PAGES args) {
@@ -185,7 +185,7 @@ NTSTATUS CallbackPAGES(PREQUEST_PAGES args) {
 
     PRINT_DEBUG("[!] page_array_sz: 0x%lX", page_array_sz);
     
-    PPAGE _ppages = (PPAGE)ExAllocatePool(PagedPool, page_array_sz * sizeof(PAGE));
+    PPAGE _ppages = (PPAGE)ExAllocatePool(NonPagedPool, page_array_sz * sizeof(PAGE));
     RtlZeroMemory(_ppages, page_array_sz * sizeof(PAGE));
 
     const auto module_base = (UINT_PTR) args->ModuleBase;
@@ -195,6 +195,7 @@ NTSTATUS CallbackPAGES(PREQUEST_PAGES args) {
     MEMORY_BASIC_INFORMATION mem_basic_inf{};
 
     DWORD page_iter = 0;
+    NTSTATUS status = STATUS_SUCCESS;
     __try {
         KeStackAttachProcess(process, &apc);
         for (auto cur_page_addr = module_base;
@@ -214,7 +215,8 @@ NTSTATUS CallbackPAGES(PREQUEST_PAGES args) {
             if (mem_basic_inf.State == MEM_COMMIT && mem_basic_inf.Protect != PAGE_NOACCESS && !(mem_basic_inf.Protect & PAGE_GUARD)) {
                 if (!(page_iter < page_array_sz)) {
                     PRINT_ERROR("[!] Page container is too small. Size: 0x%llX. Current iteration: 0x%lX", page_array_sz, page_iter);
-                    return STATUS_ARRAY_BOUNDS_EXCEEDED;
+                    break;
+                    status = STATUS_ARRAY_BOUNDS_EXCEEDED;
                 }
                 //page_iter++;
                 _ppages[page_iter++] = {mem_basic_inf.BaseAddress, (DWORD) mem_basic_inf.RegionSize};
@@ -237,6 +239,9 @@ NTSTATUS CallbackPAGES(PREQUEST_PAGES args) {
         (ObfDereferenceObject)(process);
     }
     PRINT_DEBUG("[!] Pages size: %lu", page_iter + 1);
+	if (!NT_SUCCESS(status)) {
+		return status;
+	}
     return page_iter > 0 ? STATUS_SUCCESS : STATUS_NOT_FOUND;
 }
 

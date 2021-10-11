@@ -10,13 +10,15 @@ class shared_memory;
 
 class aik {
 public:
-    /* same as in typedef, don't change! */
-    static constexpr DWORD pages_ar_sz = 0x3FF;
+    /* same as in driver, don't change! */
+    static constexpr DWORD pages_ar_sz = 0xFFFF;
 
     explicit aik();
     const int read_client_values(const Driver::Module& _game_module, const Driver::Module& _cryengine_module, AIK_READ& _aik_read);
     const int read_client_values(const Driver::Module& _game_module, const Driver::Module& _cryengine_module, DISPATCH_SHARED& _dispatch_shared);
-    const Driver::PAGE* list_pages(const std::uintptr_t base, const std::uint64_t sz) const;
+
+    const int find_client_patterns();
+    const Driver::PAGE* list_pages(const std::uintptr_t base, const std::uint64_t sz);
 
     const int write_client_values(const AIK_WRITE& _aik_write);
     const int write_client_values(const DISPATCH_SHARED& _dispatch_shared);
@@ -30,8 +32,8 @@ public:
     const int init_driver();
     const int attach_proc(const wchar_t* proc_name);
     const int get_proc_module(const wchar_t* module_name, Driver::Module& _module);
-    const std::uintptr_t find_pattern(std::uintptr_t addr, const std::size_t sz, const ustring& pattern);
-    const std::uintptr_t find_pattern(const Driver::PAGE* mem_pages, const ustring& pattern);
+    const std::uintptr_t find_pattern(std::uintptr_t addr, const std::size_t sz, const ustring& pattern, const std::bitset<256> mask = std::bitset<256>().set());
+    const std::uintptr_t find_pattern(const Driver::PAGE* mem_pages, const ustring& pattern, std::bitset<256> mask = std::bitset<256>().set());
 
     template<typename... Args>
     void debug_wprintf(const wchar_t* format, Args&&... args) {

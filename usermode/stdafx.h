@@ -15,6 +15,7 @@
 #include <cstring>
 #include <stdio.h>
 #include <map>
+#include <bitset>
 
 #include <utils.h>
 #include <driver.h>
