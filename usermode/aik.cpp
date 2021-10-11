@@ -80,7 +80,7 @@ const int aik::read_client_values(const Driver::Module& _game_module, const Driv
     }
 
     /* Cry3DEngine */ 
-    if (POINTER(debug_wprintf, _cryengine_module.addr, radar.pointer_0, _traverse_pointer, 4, m_ptrs_cache, 6, false) == false) {
+    if (POINTER(debug_wprintf, _cryengine_module.addr, radar.pointer_0, _traverse_pointer, 4, m_ptrs_cache, 6, true) == false) {
         return -0x6A;
     }
     

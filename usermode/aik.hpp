@@ -37,9 +37,9 @@ public:
 
     template<typename... Args>
     void debug_wprintf(const wchar_t* format, Args&&... args) {
-        wprintf_s(format, std::forward<Args>(args)...);
-        wprintf_s(L"\n");
-        return;
+        //wprintf_s(format, std::forward<Args>(args)...);
+        //wprintf_s(L"\n");
+        //return;
         /* wait for previous value to flush */
         DISPATCH_SHARED _d_shd{};
         do {
