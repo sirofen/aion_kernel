@@ -1,5 +1,5 @@
 #pragma once
-//#define AION_KERNEL_DEBUG_SAVE_PATTERN_BUFFER
+#define AION_KERNEL_DEBUG_SAVE_PATTERN_BUFFER
 
 class Driver
 {
@@ -15,6 +15,11 @@ public:
 		if (this->hDriver != INVALID_HANDLE_VALUE) {
 			if (this->SharedBuffer = VirtualAlloc(0, sizeof(REQUEST_DATA), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE)) {
 				UNICODE_STRING RegPath = RTL_CONSTANT_STRING(L"\\Registry\\Machine\\SOFTWARE\\ucflash");
+                //if (auto mc = (ULONG64) RegistryUtils::ReadRegistry<LONG64>(RegPath, RTL_CONSTANT_STRING(L"xxxx")); mc != 0) {
+                //    this->MAGGICCODE = mc;
+                //    return true;
+                //}
+                //RegistryUtils::RemoveRegistryKey(RegPath, RTL_CONSTANT_STRING(L"xxxx"));
 				RegistryUtils::WriteRegistry(RegPath, RTL_CONSTANT_STRING(L"xxx"), &this->SharedBuffer, REG_QWORD, 8);
 				PVOID pid = (PVOID)GetCurrentProcessId();
 				RegistryUtils::WriteRegistry(RegPath, RTL_CONSTANT_STRING(L"xx"), &pid, REG_QWORD, 8);
@@ -170,7 +175,9 @@ public:
             req.ListPages = ListPages;
             req.Pages = pages;
 			wcscpy_s(req.Module, sizeof(req.Module) / sizeof(req.Module[0]), ModuleName);
-			this->SendRequest(REQUEST_TYPE::MODULE, &req);
+			if (NTSTATUS status = this->SendRequest(REQUEST_TYPE::MODULE, &req); !NT_SUCCESS(status)) {
+                printf("Get module base status: 0x%lX\n", status);
+			}
             std::map<std::uintptr_t, DWORD> map_pages;
 			if (ListPages) {
                 for (int i = 0; i < 0x20; i++) {

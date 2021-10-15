@@ -104,6 +104,14 @@ extern "C" {
 		);
 
 	NTSYSAPI
+        NTSTATUS
+        NTAPI
+        ZwDeleteValueKey(
+                _In_ HANDLE KeyHandle,
+                _In_ PUNICODE_STRING ValueName
+		);
+
+	NTSYSAPI
 		NTSTATUS
 		NTAPI
 		ZwClose(
@@ -169,6 +177,29 @@ namespace RegistryUtils
 		return 0;
 	}
 
+	__forceinline bool RemoveRegistryKey(UNICODE_STRING RegPath, UNICODE_STRING Key) {
+        HANDLE hKey;
+        OBJECT_ATTRIBUTES ObjAttr;
+        NTSTATUS Status = STATUS_UNSUCCESSFUL;
+
+        InitializeObjectAttributes(&ObjAttr, &RegPath, OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE, NULL, NULL);
+
+        Status = ZwOpenKey(&hKey, KEY_ALL_ACCESS, &ObjAttr);
+		if (!NT_SUCCESS(Status)) {
+            return false;
+		}
+        Status = ZwDeleteValueKey(hKey, &Key);
+
+        ZwClose(hKey);
+
+		if (NT_SUCCESS(Status)) {
+            return true;
+		}
+        else {
+            return false;
+        }
+	}
+
 	template <typename type>
 	__forceinline type ReadRegistry(UNICODE_STRING RegPath, UNICODE_STRING Key)
 	{
@@ -191,7 +222,7 @@ namespace RegistryUtils
 				return 0;
 			}
 
-			PKEY_VALUE_FULL_INFORMATION pKeyInfo = (PKEY_VALUE_FULL_INFORMATION)malloc(KeyInfoSize);
+			PKEY_VALUE_FULL_INFORMATION pKeyInfo = (PKEY_VALUE_FULL_INFORMATION) malloc(KeyInfoSize);
 			RtlZeroMemory(pKeyInfo, KeyInfoSize);
 
 			Status = ZwQueryValueKey(hKey, &Key, KeyValueFullInformation, pKeyInfo, KeyInfoSize, &KeyInfoSizeNeeded);
@@ -204,9 +235,10 @@ namespace RegistryUtils
 			}
 
 			ZwClose(hKey);
-			free(pKeyInfo);
 
-			return *(type*)((LONG64)pKeyInfo + pKeyInfo->DataOffset);
+            type _v = *(type*) (pKeyInfo + pKeyInfo->DataOffset);
+            free(pKeyInfo);
+            return _v;
 		}
 
 		return 0;

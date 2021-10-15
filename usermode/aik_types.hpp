@@ -7,30 +7,33 @@ struct _AIK_READ {
     DISPATCH_SHARED contruct_dispatch() const;
     const static unsigned long size() noexcept;
 
-    wchar_t player_name[32]{};
-    unsigned char player_level{};
+    wchar_t player_name[32]{0};
+    unsigned char player_level{0};
 
     bool player_no_gravity = false;
     bool radar = false;
     bool disable_console = true;
 
-    float player_speed{};
-    std::uint32_t player_attack_speed{};
+    float player_speed = .0;
+    std::uint32_t player_attack_speed = 0;
 
-    float player_x{};
-    float player_y{};
-    float player_z{};
+    float player_x = .0;
+    float player_y = .0;
+    float player_z = .0;
 
     /* Target */
-    float target_speed{};
-    std::uint32_t target_attack_speed{};
+    float target_speed = .0;
+    std::uint32_t target_attack_speed = 0;
 
     float target_x{};
     float target_y{};
     float target_z{};
 
-    wchar_t dbg_wprint[100]{};
+    wchar_t dbg_wprint[100]{0};
 
+    bool m_aion_client_running = false;
+    bool m_aion_console_found = false;
+    bool m_aion_player_found = false;
     bool m_run = true;
 };
 typedef _AIK_READ AIK_READ, *PAIK_READ;

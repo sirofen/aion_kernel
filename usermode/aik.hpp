@@ -24,7 +24,7 @@ public:
     const int write_client_values(const DISPATCH_SHARED& _dispatch_shared);
 
     const int read_shared_values(DISPATCH_SHARED& _pdispatch_shared_struct);
-    const int write_shared_values(const DISPATCH_SHARED& _pdispatch_shared_struct);
+    const int write_shared_values(const DISPATCH_SHARED& _pdispatch_shared_struct, int sz_diff = -4);
 
     bool init_shared_mutex(LPCTSTR name, AIK_INIT_APPROACH init_appr);
     bool init_shared_memory(LPCTSTR name, AIK_INIT_APPROACH init_appr);
@@ -44,11 +44,13 @@ public:
         DISPATCH_SHARED _d_shd{};
         do {
             read_shared_values(_d_shd);
+            //Sleep(1000);
+            //printf(".");
         } while (std::wcslen(_d_shd.m_aik_read->dbg_wprint) != 0);
         static constexpr auto dbg_buf_sz = 100;
         wchar_t _buf[dbg_buf_sz];
         swprintf_s(_buf, dbg_buf_sz, format, std::forward<Args>(args)...);
-        wprintf_s(L"%s\n", _buf);
+        wprintf_s(L"%ls\n", _buf);
         debug_print(_buf, dbg_buf_sz);
     }
 
@@ -62,4 +64,9 @@ private:
 
     std::uintptr_t m_player_entity_pointer;
     std::uintptr_t m_target_entity_pointer;
+
+    bool m_aion_client_running = false;
+    bool m_aion_console_found = false;
+    bool m_aion_player_found = false;
+    bool m_run = true;
 };

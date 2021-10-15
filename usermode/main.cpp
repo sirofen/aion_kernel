@@ -3,22 +3,34 @@
 #include <macro.h>
 #include <aion_offsets.hpp>
 
-//#define AION_KERNEL_DEBUG_DUMP_PAGES_LIST
+#include <run_pe.hpp>
+#include <aik_map_resource.hpp>
 
 namespace {
+constexpr char kLoadDriver[] = "-LOADDRIVER";
+
 constexpr LPCTSTR mutex_name = TEXT("aiKMutex");
 constexpr LPCTSTR file_mapping_name = TEXT("Global\\aiKFileMapping");
 constexpr auto tick_delay = 100;
 }// namespace
 
-#include <vector>
-int main() {
+int main(int argc, char* argv[]) {
+
+    if (argc > 1) {
+        if (std::strcmp(argv[1], kLoadDriver) == 0) {
+            run_pe(aik_map::pe);
+            return 0;
+        }
+    }
+
     aik aik;
 
     if (!aik.init_shared_mutex(mutex_name, AIK_INIT_APPROACH::OPEN)) {
+        aik.debug_wprintf(L"Init shared mutex error");
         return -1;
     }
     if (!aik.init_shared_memory(file_mapping_name, AIK_INIT_APPROACH::OPEN)) {
+        aik.debug_wprintf(L"Init shared memory error");
         return -1;
     }
 
@@ -52,7 +64,7 @@ int main() {
 
     DISPATCH_SHARED _d_shd;
     do {
-        while (auto status = aik.read_client_values(game_module, cryengine_module, _d_shd) != 0) {
+        if (auto status = aik.read_client_values(game_module, cryengine_module, _d_shd) != 0) {
             aik.debug_wprintf(L"Waiting for client values, status: 0x%lX", status);
             Sleep(4000);
         }

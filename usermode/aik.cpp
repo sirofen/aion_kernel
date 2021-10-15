@@ -6,6 +6,8 @@
 #include <macro.h>
 #include <aion_offsets.hpp>
 
+//#define AION_KERNEL_DEBUG_DUMP_PAGES_LIST
+
 aik::aik()
     : m_ptrs_cache()
     , m_player_entity_pointer()
@@ -22,27 +24,25 @@ const int aik::read_client_values(const Driver::Module& _game_module, const Driv
         return -0xA;
     }
 
-    static std::uintptr_t _traverse_pointer{};
+    std::uintptr_t _traverse_pointer{};
 
-    if (m_player_entity_pointer == 0) {
-        /* player pointer */
-        /* can't use just ! 'cos there's lambda declaration in front */
-        if (POINTER(debug_wprintf, _game_module.addr, AION_VARS::GAMEDLL::self_pointer::pointer_0, _traverse_pointer, 4, m_ptrs_cache, 0, true) == false) {
-            return -0x3A;
-        }
-        if (POINTER(debug_wprintf, _traverse_pointer, AION_VARS::GAMEDLL::self_pointer::pointer_1, _traverse_pointer, 4, m_ptrs_cache, 1, false) == false) {
-            return -0x3B;
-        }
-        if (POINTER(debug_wprintf, _traverse_pointer, AION_VARS::GAMEDLL::self_pointer::pointer_2, _traverse_pointer, 4, m_ptrs_cache, 2, false) == false) {
-            return -0x3C;
-        }
-        if (POINTER(debug_wprintf, _traverse_pointer, AION_VARS::GAMEDLL::self_pointer::pointer_3, _traverse_pointer, 4, m_ptrs_cache, 3, false) == false) {
-            return -0x3D;
-        }
-
-        /* read player basic properties */
-        m_player_entity_pointer = _traverse_pointer;
+    /* player pointer */
+    /* can't use just ! 'cos there's lambda declaration in front */
+    if (POINTER(debug_wprintf, _game_module.addr, AION_VARS::GAMEDLL::self_pointer::pointer_0, _traverse_pointer, 4, m_ptrs_cache, 0, true) == false) {
+        return -0x3A;
     }
+    if (POINTER(debug_wprintf, _traverse_pointer, AION_VARS::GAMEDLL::self_pointer::pointer_1, _traverse_pointer, 4, m_ptrs_cache, 1, false) == false) {
+        return -0x3B;
+    }
+    if (POINTER(debug_wprintf, _traverse_pointer, AION_VARS::GAMEDLL::self_pointer::pointer_2, _traverse_pointer, 4, m_ptrs_cache, 2, false) == false) {
+        return -0x3C;
+    }
+    if (POINTER(debug_wprintf, _traverse_pointer, AION_VARS::GAMEDLL::self_pointer::pointer_3, _traverse_pointer, 4, m_ptrs_cache, 3, false) == false) {
+        return -0x3D;
+    }
+
+    /* read player basic properties */
+    m_player_entity_pointer = _traverse_pointer;
 
     if (POINTER(debug_wprintf, m_player_entity_pointer, self_basic_properties.pointer, _traverse_pointer, 4, m_ptrs_cache, 4, false) == false) {
         return -0x40;
@@ -53,7 +53,7 @@ const int aik::read_client_values(const Driver::Module& _game_module, const Driv
     if (!NT_SUCCESS(driver->ReadMemType(_traverse_pointer + self_basic_properties.name, _aik_read.player_level))) {
         return -0x42;
     }
-    static std::uint32_t _player_gravity;
+    std::uint32_t _player_gravity{};
     if (!NT_SUCCESS(driver->ReadMemType(_traverse_pointer + self_basic_properties.gravity.offset, _player_gravity))) {
         return -0x43;
     }
@@ -92,10 +92,14 @@ const int aik::read_client_values(const Driver::Module& _game_module, const Driv
 }
 
 const int aik::read_client_values(const Driver::Module& _game_module, const Driver::Module& _cryengine_module, DISPATCH_SHARED& _dispatch_shared) {
-    AIK_READ _aik_read;
+    AIK_READ _aik_read{};
     if (auto status = read_client_values(_game_module, _cryengine_module, _aik_read); status != 0) {
+        this->m_aion_player_found = false;
+        this->write_shared_values(AIK_READ{}.contruct_dispatch(), 0);
         return status;
     }
+    this->m_aion_player_found = true;
+    this->write_shared_values(AIK_READ{}.contruct_dispatch(), 0);
     _dispatch_shared.m_aik_read = std::make_unique<AIK_READ>(_aik_read);
     return 0;
 }
@@ -118,9 +122,13 @@ const int aik::find_client_patterns() {
         debug_wprintf(L"\t Failed!");
         return -0x141;
     }
-    debug_wprintf(L"\t Success!");
-
     m_ptrs_cache[7] = disable_console_addr;
+
+    this->m_aion_console_found = true;
+    this->write_shared_values(AIK_READ{}.contruct_dispatch(), 0);
+
+    debug_wprintf(L"\t Success!");
+    debug_wprintf(L" Console addr: 0x%llX", disable_console_addr);
     return 0;
 }
 
@@ -142,8 +150,9 @@ const Driver::PAGE* aik::list_pages(const std::uintptr_t base, const std::uint64
         }
         //debug_wprintf(L"N[%u]: page addr: 0x%p, sz: %llu\n", ++count, m_pages[i].Address, m_pages[i].Size);
     }
-    debug_wprintf(L"[!] Pages size: %lu", count);
+    debug_wprintf(L" Pages size: %lu", count);
 #ifdef AION_KERNEL_DEBUG_DUMP_PAGES_LIST
+    debug_wprintf(L" Dump pages called.", count);
     driver->dump_memory(m_pages, pages_ar_sz);
 #endif
     return m_pages;
@@ -153,56 +162,63 @@ const int aik::write_client_values(const AIK_WRITE& _aik_write) {
     if (!driver) {
         return -0x1A;
     }
-    if (m_ptrs_cache[4] == 0) {
-        return -0x100;
-    }
-    if (_aik_write.no_gravity) {
-        if (!NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[4] + self_basic_properties.gravity.offset, self_basic_properties.gravity.no_gravity))) {
-            return -0x101;
-        }
-    } else {
-        if (!NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[4] + self_basic_properties.gravity.offset, self_basic_properties.gravity.gravity))) {
-            return -0x101;
-        }
-    }
+    if (m_ptrs_cache[4] != 0) {
+        //return -0x100;
 
-    if (_aik_write.speed != 0 &&
-        !NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[4] + self_basic_properties.speed, _aik_write.speed))) {
-        return -0x102;
-    }
-    if (_aik_write.attack_speed != 0 &&
-        !NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[4] + self_basic_properties.attack_speed, _aik_write.attack_speed))) {
-        return -0x103;
-    }
+        if (_aik_write.no_gravity) {
+            if (!NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[4] + self_basic_properties.gravity.offset, self_basic_properties.gravity.no_gravity))) {
+                return -0x101;
+            }
+        } else {
+            if (!NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[4] + self_basic_properties.gravity.offset, self_basic_properties.gravity.gravity))) {
+                return -0x101;
+            }
+        }
 
-    if (_aik_write.player_x != 0 &&
-        !NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[5] + self_pos.x_coord, _aik_write.player_x))) {
-        return -0x110;
-    }
-    if (_aik_write.player_y != 0 &&
-        !NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[5] + self_pos.y_coord, _aik_write.player_y))) {
-        return -0x111;
-    }
-    if (_aik_write.player_z != 0 &&
-        !NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[5] + self_pos.z_coord, _aik_write.player_z))) {
-        return -0x112;
-    }
-    if (_aik_write.radar) {
-        if (!NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[6] + radar.radar_offset, radar.radar_init))) {
-            return -0x113;
+
+        if (_aik_write.speed != 0 &&
+            !NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[4] + self_basic_properties.speed, _aik_write.speed))) {
+            return -0x102;
         }
-    } else {
-        if (!NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[6] + radar.radar_offset, radar.radar_deinit))) {
-            return -0x114;
+        if (_aik_write.attack_speed != 0 &&
+            !NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[4] + self_basic_properties.attack_speed, _aik_write.attack_speed))) {
+            return -0x103;
         }
     }
-    if (!_aik_write.disable_console) {
-        if (!NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[7], AION_VARS::console::enable))) {
-            return -0x115;
+    if (m_ptrs_cache[5] != 0) {
+        if (_aik_write.player_x != 0 &&
+            !NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[5] + self_pos.x_coord, _aik_write.player_x))) {
+            return -0x110;
         }
-    } else {
-        if (!NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[7], AION_VARS::console::disable))) {
-            return -0x115;
+        if (_aik_write.player_y != 0 &&
+            !NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[5] + self_pos.y_coord, _aik_write.player_y))) {
+            return -0x111;
+        }
+        if (_aik_write.player_z != 0 &&
+            !NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[5] + self_pos.z_coord, _aik_write.player_z))) {
+            return -0x112;
+        }
+    }
+    if (m_ptrs_cache[6] != 0) {
+        if (_aik_write.radar) {
+            if (!NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[6] + radar.radar_offset, radar.radar_init))) {
+                return -0x113;
+            }
+        } else {
+            if (!NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[6] + radar.radar_offset, radar.radar_deinit))) {
+                return -0x114;
+            }
+        }
+    }
+    if (m_ptrs_cache[7] != 0) {
+        if (!_aik_write.disable_console) {
+            if (!NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[7], AION_VARS::console::enable))) {
+                return -0x115;
+            }
+        } else {
+            if (!NT_SUCCESS(driver->WriteMemType(m_ptrs_cache[7], AION_VARS::console::disable))) {
+                return -0x115;
+            }
         }
     }
 
@@ -231,12 +247,17 @@ const int aik::read_shared_values(DISPATCH_SHARED& _pdispatch_shared_struct) {
     return 0;
 }
 
-const int aik::write_shared_values(const DISPATCH_SHARED& _pdispatch_shared_struct) {
-    if (_pdispatch_shared_struct.m_aik_read) {                                                                            /* dont write bool m_run; */
-        m_shared_memory->write_value_typed<AIK_READ>(*_pdispatch_shared_struct.m_aik_read, DISPATCH_SHARED::aik_read_offset(), sizeof(AIK_READ) - 3);
+const int aik::write_shared_values(const DISPATCH_SHARED& _pdispatch_shared_struct, int sz_diff) {
+    if (_pdispatch_shared_struct.m_aik_read) {
+        _pdispatch_shared_struct.m_aik_read->m_aion_client_running = this->m_aion_client_running;
+        _pdispatch_shared_struct.m_aik_read->m_aion_console_found = this->m_aion_console_found;
+        _pdispatch_shared_struct.m_aik_read->m_aion_player_found = this->m_aion_player_found;
+        _pdispatch_shared_struct.m_aik_read->m_run = this->m_run;
+                                                                                                                            /* last 4 bytes reserved for servicing */
+        m_shared_memory->write_value_typed<AIK_READ>(*_pdispatch_shared_struct.m_aik_read, DISPATCH_SHARED::aik_read_offset(), sizeof(AIK_READ) + sz_diff);
     }
     if (_pdispatch_shared_struct.m_aik_write) {
-        m_shared_memory->write_value_typed<AIK_WRITE>(*_pdispatch_shared_struct.m_aik_write, DISPATCH_SHARED::aik_write_offset());
+        m_shared_memory->write_value_typed<AIK_WRITE>(*_pdispatch_shared_struct.m_aik_write, DISPATCH_SHARED::aik_write_offset(), sizeof(AIK_READ) + sz_diff);
     }
     /* don't update DISPATCH_SHARED::m_run from client side */
     return 0;
@@ -308,6 +329,7 @@ const int aik::init_driver() {
         return -0xB;
     }
     debug_wprintf(L"\t Success!");
+    this->write_shared_values(AIK_READ{}.contruct_dispatch(), 0);
 
     return 0;
 }
@@ -318,8 +340,10 @@ const int aik::attach_proc(const wchar_t* proc_name) {
         debug_wprintf(L"\t Failed!");
         return -0x1A;
     }
+    this->m_aion_client_running = true;
+    this->write_shared_values(AIK_READ{}.contruct_dispatch(), 0);
     debug_wprintf(L"\t Success!");
-    debug_wprintf(L"[-] %s PID: %u", proc_name, driver->ProcessId);
+    debug_wprintf(L" %s PID: %u", proc_name, driver->ProcessId);
     return 0;
 }
 
@@ -331,7 +355,7 @@ const int aik::get_proc_module(const wchar_t* module_name, Driver::Module& _modu
         return -0x2A;
     }
     debug_wprintf(L"\t Success!");
-    debug_wprintf(L"[-] %s addr: 0x%llX, sz: %u", module_name, _module.addr, _module.size);
+    debug_wprintf(L" %s addr: 0x%llX, sz: %u", module_name, _module.addr, _module.size);
     return 0;
 }
 const std::uintptr_t aik::find_pattern(const std::uintptr_t addr, const std::size_t sz, const ustring& pattern, const std::bitset<256> mask) {

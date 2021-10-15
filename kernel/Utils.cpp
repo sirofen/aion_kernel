@@ -11,7 +11,7 @@ PMODULE_ENTRY Utils::GetModuleByName(PEPROCESS process, PWCHAR moduleName) {
             PLIST_ENTRY list = &(peb64->Ldr->InLoadOrderModuleList);
             for (PLIST_ENTRY entry = list->Flink; entry != list;) {
                 PLDR_DATA_TABLE_ENTRY module = CONTAINING_RECORD(entry, LDR_DATA_TABLE_ENTRY, InLoadOrderLinks);
-				print("[-] module64 entry: %S", module->BaseDllName.Buffer);
+				PRINT_TRACE("[-] module64 entry: %S", module->BaseDllName.Buffer);
                 if ((RtlCompareUnicodeString) (&module->BaseDllName, &moduleNameStr, TRUE) == 0) {
                     auto entry = MODULE_ENTRY(module);
                     return &entry;
@@ -29,7 +29,7 @@ PMODULE_ENTRY Utils::GetModuleByName(PEPROCESS process, PWCHAR moduleName) {
         for (PLIST_ENTRY32 plist_entry = (PLIST_ENTRY32) ((PPEB_LDR_DATA32) peb32->Ldr)->InLoadOrderModuleList.Flink;
              plist_entry != &((PPEB_LDR_DATA32) peb32->Ldr)->InLoadOrderModuleList;) {
             PLDR_DATA_TABLE_ENTRY32 module = CONTAINING_RECORD(plist_entry, LDR_DATA_TABLE_ENTRY32, InLoadOrderLinks);
-			print("[-] module32 entry: %S", module->BaseDllName.Buffer);
+            PRINT_TRACE("[-] module32 entry: %S", module->BaseDllName.Buffer);
 
 			//if (module->DllBase <= addr && (module->SizeOfImage + module->DllBase) >= addr) {
    //             print("==========================FOUND========================");
@@ -44,7 +44,7 @@ PMODULE_ENTRY Utils::GetModuleByName(PEPROCESS process, PWCHAR moduleName) {
         }
 
     } __except (EXCEPTION_EXECUTE_HANDLER) {
-        print("%s: Exception, Code: 0x%X\n", __FUNCTION__, GetExceptionCode());
+        PRINT_ERROR("%s: Exception, Code: 0x%X\n", __FUNCTION__, GetExceptionCode());
     }
     return NULL;
 }

@@ -127,12 +127,14 @@ namespace Utils {
 	namespace Registry //https://www.unknowncheats.me/forum/3108590-post2.html
 	{
 		ULONG GetKeyInfoSize(HANDLE hKey, PUNICODE_STRING Key);
-		template <typename type>
-		type ReadRegistry(UNICODE_STRING RegPath, UNICODE_STRING Key);
+		//template <typename type>
+		//type ReadRegistry(UNICODE_STRING RegPath, UNICODE_STRING Key);
 		bool WriteRegistry(UNICODE_STRING RegPath, UNICODE_STRING Key, PVOID Address, ULONG Type, ULONG Size);
 		template<typename type>
 		static type ReadRegistry(UNICODE_STRING RegPath, UNICODE_STRING Key)
 		{
+            //DbgPrintEx(0, 0, __FUNCTION__);
+            //DbgPrintEx(0, 0, __FUNCTION__ "key: %S", Key.Buffer);
 			HANDLE hKey;
 			OBJECT_ATTRIBUTES ObjAttr;
 			NTSTATUS Status = STATUS_UNSUCCESSFUL;
@@ -152,6 +154,8 @@ namespace Utils {
 					return 0;
 				}
 
+				//DbgPrintEx(0, 0, "KeyInfoSize: %lu\n", KeyInfoSize);
+
 				PKEY_VALUE_FULL_INFORMATION pKeyInfo = (PKEY_VALUE_FULL_INFORMATION)ExAllocatePool(NonPagedPool, KeyInfoSize);
 				RtlZeroMemory(pKeyInfo, KeyInfoSize);
 
@@ -163,11 +167,12 @@ namespace Utils {
 					ExFreePoolWithTag(pKeyInfo, 0);
 					return 0;
 				}
-
+                //DbgPrintEx(0, 0, "ZwQueryValueKey name: %s\n", pKeyInfo->Name);
 				ZwClose(hKey);
+                type _v = *(type*) ((LONG64) pKeyInfo + pKeyInfo->DataOffset);
+                //DbgPrintEx(0, 0, "read reg: %llu\n", _v);
 				ExFreePoolWithTag(pKeyInfo, 0);
-
-				return *(type*)((LONG64)pKeyInfo + pKeyInfo->DataOffset);
+                return _v;
 			}
 
 			return 0;

@@ -1,8 +1,12 @@
 #include <stdafx.h>
 #include <clean.hpp>
 
-UNICODE_STRING RegPath = RTL_CONSTANT_STRING(L"\\Registry\\Machine\\SOFTWARE\\ucflash");
-typedef NTSTATUS(*HookControl_t)(void* a1, void* a2);
+constexpr UNICODE_STRING RegPath = RTL_CONSTANT_STRING(L"\\Registry\\Machine\\SOFTWARE\\ucflash");
+constexpr UNICODE_STRING kXX = RTL_CONSTANT_STRING(L"xx");
+constexpr UNICODE_STRING kXXX = RTL_CONSTANT_STRING(L"xxx");
+constexpr UNICODE_STRING kXXXX = RTL_CONSTANT_STRING(L"xxxx");
+
+typedef NTSTATUS (*HookControl_t)(void* a1, void* a2);
 HookControl_t OriginalPtr;
 PVOID SharedBuffer = 0;
 UINT SharedPid = 0;
@@ -13,6 +17,7 @@ NTSTATUS HookControl(PDEVICE_OBJECT device, PIRP irp) {
 	retry:
 	PEPROCESS process = NULL;
 	NTSTATUS status = PsLookupProcessByProcessId((HANDLE)SharedPid, &process);
+    //print(__FUNCTION__);
 	if (NT_SUCCESS(status) && process) {
 		retry = false;
 		REQUEST_DATA data;
@@ -24,7 +29,7 @@ NTSTATUS HookControl(PDEVICE_OBJECT device, PIRP irp) {
 					KeQuerySystemTime(&time);
 					NewMaggicCode = RtlRandomEx(&time) % MAXULONG64;
 					*data.MaggicCode = NewMaggicCode;
-					Utils::Registry::WriteRegistry(RegPath, RTL_CONSTANT_STRING(L"xxxx"), &NewMaggicCode, REG_QWORD, 8);
+					Utils::Registry::WriteRegistry(RegPath, kXXXX, &NewMaggicCode, REG_QWORD, 8);
 					//print("NewMaggicCode: 0x%llX\n", NewMaggicCode);
 				}
 				switch (data.Type)
@@ -54,8 +59,8 @@ NTSTATUS HookControl(PDEVICE_OBJECT device, PIRP irp) {
 		ObfDereferenceObject(process);
 	}
 	else {
-		SharedBuffer = (PVOID)Utils::Registry::ReadRegistry<LONG64>(RegPath, RTL_CONSTANT_STRING(L"xxx"));
-		SharedPid = (UINT)Utils::Registry::ReadRegistry<LONG64>(RegPath, RTL_CONSTANT_STRING(L"xx"));
+		SharedBuffer = (PVOID)Utils::Registry::ReadRegistry<LONG64>(RegPath, kXXX);
+		SharedPid = (UINT)Utils::Registry::ReadRegistry<LONG64>(RegPath, kXX);
 		print("[+] New SharedBuffer: 0x%llX", SharedBuffer);
 		print("[+] New SharedPid: 0x%llX", SharedPid);
 		if (!retry) {

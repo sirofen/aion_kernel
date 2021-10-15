@@ -250,8 +250,8 @@ NTSTATUS ListPages(PVOID base, DWORD size,  PAGE* const& pages) {
 
     DWORD page_iter = 0;
     for (auto cur_page_addr = (UINT_PTR) base; cur_page_addr < (UINT_PTR) base + size; cur_page_addr = (ULONG_PTR) mem_basic_inf.BaseAddress + mem_basic_inf.RegionSize) {
-        if (ZwQueryVirtualMemory(ZwCurrentProcess(), (PVOID) ((UINT_PTR) cur_page_addr), MemoryBasicInformation, &mem_basic_inf, sizeof(mem_basic_inf), NULL) != STATUS_SUCCESS) {
-            return STATUS_UNSUCCESSFUL;
+        if (NTSTATUS status = ZwQueryVirtualMemory(ZwCurrentProcess(), (PVOID) ((UINT_PTR) cur_page_addr), MemoryBasicInformation, &mem_basic_inf, sizeof(mem_basic_inf), NULL); !NT_SUCCESS(status)) {
+            return status;
         }
         if (mem_basic_inf.State == MEM_COMMIT && mem_basic_inf.Protect != PAGE_NOACCESS && !(mem_basic_inf.Protect & PAGE_GUARD)) {
             PRINT_DEBUG("[!] Accessible page - base: 0x%p, sz: 0x%lX", mem_basic_inf.BaseAddress, mem_basic_inf.RegionSize);
@@ -275,7 +275,8 @@ NTSTATUS CallbackMODULE(PREQUEST_MODULE args)
 		PVOID base = NULL;
 		DWORD size = 0;
         PAGE pages[0x20]{};
-		(KeAttachProcess)(process);
+        KAPC_STATE apc;
+		(KeStackAttachProcess)(process, &apc);
 
         PMODULE_ENTRY module_entry = Utils::GetModuleByName(process, args->Module);
         if (module_entry) {
@@ -285,15 +286,18 @@ NTSTATUS CallbackMODULE(PREQUEST_MODULE args)
 
 			if (args->ListPages) {
                 status = ListPages(base, size, pages);
+                print("LIST PAGES");
 			}
 
         } else {
             status = STATUS_NOT_FOUND;
         }
 
-		(KeDetachProcess)();
+		(KeUnstackDetachProcess)(&apc);
 		if (NT_SUCCESS(status)) {
-            RtlCopyMemory(args->Pages, &pages, sizeof(pages));
+            if (args->ListPages) {
+                RtlCopyMemory(args->Pages, &pages, sizeof(pages));
+            }
 			RtlCopyMemory(args->OutAddress, &base, sizeof(base));
 			RtlCopyMemory(args->OutSize, &size, sizeof(size));
 		}
