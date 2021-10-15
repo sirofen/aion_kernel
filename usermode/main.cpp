@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
         aik.debug_wprintf(L"Waiting for driver, status: 0x%lX", status);
         Sleep(4000);
     }
-    //AION_VARS::aion_bin
+
     while (auto status = aik.attach_proc(AION_VARS::aion_bin) != 0) {
         aik.debug_wprintf(L"Waiting for process, status: 0x%lX", status);
         Sleep(4000);
@@ -73,51 +73,6 @@ int main(int argc, char* argv[]) {
         aik.read_shared_values(_d_shd);
         aik.write_client_values(_d_shd);
     } while (_d_shd.m_aik_read->m_run);
-    return 0;
-    constexpr size_t read_sz = 0x10;
-
-    BYTE prev_bytes[read_sz];
-    BYTE new_bytes[read_sz];
-
-    std::uintptr_t ptr_cache[2] = {0, 0};
-    std::uintptr_t _addr_t = 0;
-
-    for (; !GetAsyncKeyState(VK_F12);)
-
-        return 0;
-
-    //system("pause");
-    for (int i = 0; i < 40; i++) {
-        Sleep(1000);
-
-        AIK_READ aik_read{.player_speed = (float) i,
-                          .player_attack_speed = (uint32_t) i,
-                          .target_speed = 10.3232233,
-                          .target_attack_speed = 23232323,
-                          .target_x = 23.332,
-                          .target_y = 3223.123,
-                          .target_z = 999.123,
-                          .dbg_wprint = L"printA"};
-        //std::cout << "\nspeed :";
-        //std::wcin >> aik_read.player_speed;
-        //std::cout << "\ndbg str: ";
-        //std::wcin.getline(aik_read.dbg_wprint, 100);
-        //printf("shared speed %f\n", aik_read.player_attack_speed);
-        aik.write_shared_values(aik_read.contruct_dispatch());
-        DISPATCH_SHARED dis_sh;
-        aik.read_shared_values(dis_sh);
-        printf("values to write, speed: %f, attack speed: %u\n", dis_sh.m_aik_write->speed, dis_sh.m_aik_write->attack_speed);
-    }
-
-    for (; 0; Sleep(1000)) {
-        DISPATCH_SHARED dis_sh;
-        aik.read_shared_values(dis_sh);
-        printf(".");
-    }
-
-
-    system("pause");
-    //aik.init_driver();
 
     return 0;
 }

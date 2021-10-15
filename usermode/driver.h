@@ -1,5 +1,5 @@
 #pragma once
-#define AION_KERNEL_DEBUG_SAVE_PATTERN_BUFFER
+//#define AION_KERNEL_DEBUG_SAVE_PATTERN_BUFFER
 
 class Driver
 {
