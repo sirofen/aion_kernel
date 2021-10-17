@@ -113,15 +113,15 @@ const int aik::find_client_patterns() {
     std::reverse(reversed_mask.begin(), reversed_mask.end());
 
     debug_wprintf(L"[-] Find console pattern...");
-    auto disable_console_addr = find_pattern(pages,
+    auto disable_console_pattern = find_pattern(pages,
                                              ustring(std::cbegin(AION_VARS::console::pattern), std::cend(AION_VARS::console::pattern)),
-                                             std::bitset<256>(reversed_mask)) +
-                                AION_VARS::console::disable_console_offset;
+                                             std::bitset<256>(reversed_mask));
 
-    if (disable_console_addr == 0) {
+    if (disable_console_pattern == 0) {
         debug_wprintf(L"\t Failed!");
         return -0x141;
     }
+    auto disable_console_addr = disable_console_pattern + AION_VARS::console::disable_console_offset;
     m_ptrs_cache[7] = disable_console_addr;
 
     this->m_aion_console_found = true;
@@ -373,4 +373,19 @@ const std::uintptr_t aik::find_pattern(const Driver::PAGE* mem_pages, const ustr
         }
     }
     return 0;
+}
+
+bool aik::is_process_running() {
+    HANDLE phandle = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, driver->ProcessId);
+    if (phandle == NULL) {
+        return phandle;
+    }
+    CloseHandle(phandle);
+    return true;
+}
+void aik::reset_service_values() {
+    m_aion_client_running = false;
+    m_aion_console_found = false;
+    m_aion_player_found = false;
+    write_shared_values(AIK_READ{}.contruct_dispatch(), -1);
 }

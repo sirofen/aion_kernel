@@ -35,6 +35,9 @@ public:
     const std::uintptr_t find_pattern(std::uintptr_t addr, const std::size_t sz, const ustring& pattern, const std::bitset<256> mask = std::bitset<256>().set());
     const std::uintptr_t find_pattern(const Driver::PAGE* mem_pages, const ustring& pattern, std::bitset<256> mask = std::bitset<256>().set());
 
+    bool is_process_running();
+    void reset_service_values();
+
     template<typename... Args>
     void debug_wprintf(const wchar_t* format, Args&&... args) {
         //wprintf_s(format, std::forward<Args>(args)...);

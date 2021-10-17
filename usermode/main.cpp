@@ -36,10 +36,13 @@ int main(int argc, char* argv[]) {
 
     aik.debug_wprintf(L"[-] aiK client shared memory initialized");
 
+
     while (auto status = aik.init_driver() != 0) {
         aik.debug_wprintf(L"Waiting for driver, status: 0x%lX", status);
         Sleep(4000);
     }
+
+    reattach_process_label:
 
     while (auto status = aik.attach_proc(AION_VARS::aion_bin) != 0) {
         aik.debug_wprintf(L"Waiting for process, status: 0x%lX", status);
@@ -58,13 +61,19 @@ int main(int argc, char* argv[]) {
         Sleep(4000);
     }
 
-    aik.find_client_patterns();
+    while (auto status = aik.find_client_patterns() != 0) {
+        aik.debug_wprintf(L"Search pattern failed, status: 0x%lX, retrying", status);
+    }
 
     aik.debug_wprintf(L"=======================================");
 
     DISPATCH_SHARED _d_shd;
     do {
         if (auto status = aik.read_client_values(game_module, cryengine_module, _d_shd) != 0) {
+            if (!aik.is_process_running()) {
+                aik.reset_service_values();
+                goto reattach_process_label;
+            }
             aik.debug_wprintf(L"Waiting for client values, status: 0x%lX", status);
             Sleep(4000);
         }
