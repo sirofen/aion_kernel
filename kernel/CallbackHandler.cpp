@@ -1,6 +1,5 @@
 #include "stdafx.h"
 //Some stuff from: https://github.com/btbd/modmap/blob/master/driver/core.c
-_IRQL_requires_max_(APC_LEVEL)
 NTSTATUS CallbackWRITE(PREQUEST_WRITE args)
 {
 	if (((PBYTE)args->Src + args->Size < (PBYTE)args->Src) ||
@@ -105,7 +104,6 @@ NTSTATUS CallbackREAD(PREQUEST_READ args)
 	return STATUS_UNSUCCESSFUL;
 }
 
-_IRQL_requires_max_(APC_LEVEL)
 NTSTATUS CallbackPROTECT(PREQUEST_PROTECT args)
 {
 	if (!args->ProcessId || !args->Address || !args->Size || !args->InOutProtect)
@@ -132,7 +130,6 @@ NTSTATUS CallbackPROTECT(PREQUEST_PROTECT args)
 	return status;
 }
 
-_IRQL_requires_max_(APC_LEVEL)
 NTSTATUS CallbackALLOC(PREQUEST_ALLOC args)
 {
 	PEPROCESS process = NULL;
@@ -152,7 +149,6 @@ NTSTATUS CallbackALLOC(PREQUEST_ALLOC args)
 	return status;
 }
 
-_IRQL_requires_max_(APC_LEVEL)
 NTSTATUS CallbackFREE(PREQUEST_FREE args)
 {
 	PEPROCESS process = NULL;
@@ -266,7 +262,6 @@ NTSTATUS ListPages(PVOID base, DWORD size,  PAGE* const& pages) {
     return STATUS_SUCCESS;
 }
 
-_IRQL_requires_max_(APC_LEVEL)
 NTSTATUS CallbackMODULE(PREQUEST_MODULE args)
 {
 	PEPROCESS process = NULL;
@@ -306,7 +301,6 @@ NTSTATUS CallbackMODULE(PREQUEST_MODULE args)
 	return status;
 }
 
-_IRQL_requires_max_(APC_LEVEL)
 NTSTATUS CallbackMAINBASE(PREQUEST_MAINBASE args)
 {
 	PEPROCESS pProcess = NULL;
