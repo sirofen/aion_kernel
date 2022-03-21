@@ -1,5 +1,4 @@
 #pragma once
-#define DEFAULT_MAGGICCODE 0x59002360218c1e2dul //length 16 max
 
 #define CallbackHandler(name)												\
  case REQUEST_TYPE::name: {													\
@@ -22,7 +21,6 @@ typedef enum _REQUEST_TYPE : UINT {
 } REQUEST_TYPE;
 
 typedef struct _REQUEST_DATA {
-	ULONG64* MaggicCode;
 	UINT Type;
 	PVOID Arguments;
 	NTSTATUS* Status;
@@ -71,7 +69,7 @@ typedef struct _PAGE {
 typedef struct _REQUEST_MODULE {
 	DWORD ProcessId;
 	WCHAR Module[0xFF];
-	PBYTE* OutAddress;
+	UINT_PTR* OutAddress;
 	DWORD* OutSize;
     bool ListPages;
 	PPAGE Pages;

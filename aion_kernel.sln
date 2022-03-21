@@ -5,8 +5,6 @@ VisualStudioVersion = 16.0.30804.86
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "kernel", "kernel\kernel.vcxproj", "{A0EDB9A2-26D0-45CA-8F7D-D881C768E4D9}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "usermode", "usermode\usermode.vcxproj", "{90824B2A-2B07-40E1-9C0A-DB31D6BAAAAB}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -19,10 +17,6 @@ Global
 		{A0EDB9A2-26D0-45CA-8F7D-D881C768E4D9}.Release|x64.ActiveCfg = Release|x64
 		{A0EDB9A2-26D0-45CA-8F7D-D881C768E4D9}.Release|x64.Build.0 = Release|x64
 		{A0EDB9A2-26D0-45CA-8F7D-D881C768E4D9}.Release|x64.Deploy.0 = Release|x64
-		{90824B2A-2B07-40E1-9C0A-DB31D6BAAAAB}.Debug|x64.ActiveCfg = Debug|x64
-		{90824B2A-2B07-40E1-9C0A-DB31D6BAAAAB}.Debug|x64.Build.0 = Debug|x64
-		{90824B2A-2B07-40E1-9C0A-DB31D6BAAAAB}.Release|x64.ActiveCfg = Release|x64
-		{90824B2A-2B07-40E1-9C0A-DB31D6BAAAAB}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,5 +1,11 @@
+#define PRINT_VERBOSE_DEBUG
 #include "stdafx.h"
 //Some stuff from: https://github.com/btbd/modmap/blob/master/driver/core.c
+
+namespace {
+constexpr DWORD page_array_sz = 0xFFFF;
+}
+
 NTSTATUS CallbackWRITE(PREQUEST_WRITE args)
 {
 	if (((PBYTE)args->Src + args->Size < (PBYTE)args->Src) ||
@@ -9,46 +15,14 @@ NTSTATUS CallbackWRITE(PREQUEST_WRITE args)
 		return STATUS_ACCESS_VIOLATION;
 	}
 
-	if (args->bPhysicalMem) {
-		PEPROCESS pProcess = NULL;
-		if (args->ProcessId == 0) 
-			return STATUS_UNSUCCESSFUL;
-
-		NTSTATUS NtRet = PsLookupProcessByProcessId((HANDLE)args->ProcessId, &pProcess);
-		if (NtRet != STATUS_SUCCESS) return NtRet;
-
-		ULONG_PTR process_dirbase = Utils::PhysicalMemory::GetProcessCr3(pProcess);
-		ObDereferenceObject(pProcess);
-
-		SIZE_T CurOffset = 0;
-		SIZE_T TotalSize = args->Size;
-		while (TotalSize)
-		{
-			INT64 CurPhysAddr = Utils::PhysicalMemory::TranslateLinearAddress(process_dirbase, (ULONG64)args->Src + CurOffset);
-			if (!CurPhysAddr) return STATUS_UNSUCCESSFUL;
-
-			ULONG64 WriteSize = min(PAGE_SIZE - (CurPhysAddr & 0xFFF), TotalSize);
-			SIZE_T BytesWritten = 0;
-			NtRet = Utils::PhysicalMemory::WritePhysicalAddress(PVOID(CurPhysAddr), (PVOID)((ULONG64)args->Dest+ CurOffset), WriteSize, &BytesWritten);
-			TotalSize -= BytesWritten;
-			CurOffset += BytesWritten;
-			if (NtRet != STATUS_SUCCESS) break;
-			if (BytesWritten == 0) break;
-		}
-		//*args-> = CurOffset;
-		return NtRet;
-	}
-	else {
 		PEPROCESS process = NULL;
 		NTSTATUS status = (PsLookupProcessByProcessId)((HANDLE)args->ProcessId, &process);
 		if (NT_SUCCESS(status)) {
 			SIZE_T outSize = 0;
-			status = (MmCopyVirtualMemory)((PsGetCurrentProcess)(), args->Src, process, args->Dest, (SIZE_T)args->Size, KernelMode, &outSize);
+			status = MmCopyVirtualMemory(PsGetCurrentProcess(), args->Src, process, args->Dest, (SIZE_T)args->Size, KernelMode, &outSize);
 			(ObfDereferenceObject)(process);
 		}
 		return status;
-	}
-	return STATUS_UNSUCCESSFUL;
 }
 
 NTSTATUS CallbackREAD(PREQUEST_READ args)
@@ -60,48 +34,15 @@ NTSTATUS CallbackREAD(PREQUEST_READ args)
 
 		return STATUS_ACCESS_VIOLATION;
 	}
-	if (args->bPhysicalMem) {
-		PEPROCESS pProcess = NULL;
-		if (args->ProcessId == 0) return STATUS_UNSUCCESSFUL;
 
-		NTSTATUS NtRet = PsLookupProcessByProcessId((HANDLE)args->ProcessId, &pProcess);
-		if (NtRet != STATUS_SUCCESS) return NtRet;
-
-		ULONG_PTR process_dirbase = Utils::PhysicalMemory::GetProcessCr3(pProcess);
-		ObDereferenceObject(pProcess);
-
-		SIZE_T CurOffset = 0;
-		SIZE_T TotalSize = args->Size;
-        PRINT_TRACE("Physical memory to read sz: %llu", TotalSize);
-        while (TotalSize > 0)
-		{
-			INT64 CurPhysAddr = Utils::PhysicalMemory::TranslateLinearAddress(process_dirbase, (ULONG64)args->Src + CurOffset);
-            PRINT_TRACE("CurPhysAddr: 0x%llX", CurPhysAddr);
-			if (!CurPhysAddr) return STATUS_UNSUCCESSFUL;
-
-			ULONG64 ReadSize = min(PAGE_SIZE - (CurPhysAddr & 0xFFF), TotalSize);
-			SIZE_T BytesRead = 0;
-			NtRet = Utils::PhysicalMemory::ReadPhysicalAddress(PVOID(CurPhysAddr), (PVOID)((ULONG64)args->Dest + CurOffset), ReadSize, &BytesRead);
-			TotalSize -= BytesRead;
-			CurOffset += BytesRead;
-            PRINT_TRACE("Phys mem read sz: %llu", BytesRead);
-			if (NtRet != STATUS_SUCCESS) break;
-			if (BytesRead == 0) break;
-		}
-		//*read = CurOffset;
-		return NtRet;
-	}
-	else {
-		PEPROCESS process = NULL;
-		NTSTATUS status = (PsLookupProcessByProcessId)((HANDLE)args->ProcessId, &process);
-		if (NT_SUCCESS(status)) {
-			SIZE_T outSize = 0;
-			status = (MmCopyVirtualMemory)(process, args->Src, (PsGetCurrentProcess)(), args->Dest, (SIZE_T)args->Size, KernelMode, &outSize);
-			(ObfDereferenceObject)(process);
-		}
-		return status;
-	}
-	return STATUS_UNSUCCESSFUL;
+	PEPROCESS process = NULL;
+    NTSTATUS status = (PsLookupProcessByProcessId) ((HANDLE) args->ProcessId, &process);
+    if (NT_SUCCESS(status)) {
+        SIZE_T outSize = 0;
+        status = MmCopyVirtualMemory(process, args->Src, PsGetCurrentProcess(), args->Dest, (SIZE_T) args->Size, KernelMode, &outSize);
+        (ObfDereferenceObject)(process);
+    }
+    return status;
 }
 
 NTSTATUS CallbackPROTECT(PREQUEST_PROTECT args)
@@ -165,14 +106,10 @@ NTSTATUS CallbackFREE(PREQUEST_FREE args)
 	return status;
 }
 
-namespace{
-constexpr DWORD page_array_sz = 0xFFFF;
-}
-
 NTSTATUS CallbackPAGES(PREQUEST_PAGES args) {
     PEPROCESS process = NULL;
 
-    if (NTSTATUS status = (PsLookupProcessByProcessId) ((HANDLE) args->ProcessId, &process);
+    if (NTSTATUS status = PsLookupProcessByProcessId((HANDLE) args->ProcessId, &process);
         !NT_SUCCESS(status)) {
         return status;
     }
@@ -180,13 +117,11 @@ NTSTATUS CallbackPAGES(PREQUEST_PAGES args) {
     KAPC_STATE apc;
 
     PRINT_DEBUG("[!] page_array_sz: 0x%lX", page_array_sz);
-    
-    PPAGE _ppages = (PPAGE)ExAllocatePool(NonPagedPool, page_array_sz * sizeof(PAGE));
+
+    auto _ppages = (PPAGE) ExAllocatePool(NonPagedPool, page_array_sz * sizeof(PAGE));
     RtlZeroMemory(_ppages, page_array_sz * sizeof(PAGE));
 
-    const auto module_base = (UINT_PTR) args->ModuleBase;
-    const auto module_size = args->ModuleSize;
-    PRINT_DEBUG("[!] Page list base: 0x%llX, sz: 0x%llX", module_base, module_size);
+    PRINT_DEBUG("[!] Page list base: 0x%llX, sz: 0x%llX", args->ModuleBase, args->ModuleSize);
 
     MEMORY_BASIC_INFORMATION mem_basic_inf{};
 
@@ -194,12 +129,12 @@ NTSTATUS CallbackPAGES(PREQUEST_PAGES args) {
     NTSTATUS status = STATUS_SUCCESS;
     __try {
         KeStackAttachProcess(process, &apc);
-        for (auto cur_page_addr = module_base;
-             cur_page_addr < module_base + module_size;
-             cur_page_addr = (ULONG_PTR) mem_basic_inf.BaseAddress + mem_basic_inf.RegionSize) {
+        for (auto cur_page_addr = (UINT64) args->ModuleBase;
+             cur_page_addr < (UINT64) args->ModuleBase + args->ModuleSize;
+             cur_page_addr = (UINT64) mem_basic_inf.BaseAddress + mem_basic_inf.RegionSize) {
 
             if (NTSTATUS status = ZwQueryVirtualMemory(ZwCurrentProcess(),
-                                                       (PVOID) (cur_page_addr),
+                                                       (PVOID) cur_page_addr,
                                                        MemoryBasicInformation,
                                                        &mem_basic_inf,
                                                        sizeof(mem_basic_inf),
@@ -232,21 +167,23 @@ NTSTATUS CallbackPAGES(PREQUEST_PAGES args) {
         //SIZE_T sz;
         //MmCopyMemory(args->Pages, MM_COPY_ADDRESS{&_ppages}, page_array_sz * sizeof(PAGE), MM_COPY_MEMORY_VIRTUAL, &sz);
         ExFreePool(_ppages);
-        (ObfDereferenceObject)(process);
+        ObfDereferenceObject(process);
     }
     PRINT_DEBUG("[!] Pages size: %lu", page_iter + 1);
-	if (!NT_SUCCESS(status)) {
-		return status;
-	}
+    if (!NT_SUCCESS(status)) {
+        return status;
+    }
     return page_iter > 0 ? STATUS_SUCCESS : STATUS_NOT_FOUND;
 }
 
-NTSTATUS ListPages(PVOID base, DWORD size,  PAGE* const& pages) {
-    MEMORY_BASIC_INFORMATION mem_basic_inf = {0};
+
+NTSTATUS ListPages(PVOID base, DWORD size,  PAGE* pages) {
+    MEMORY_BASIC_INFORMATION mem_basic_inf{};
 
     DWORD page_iter = 0;
     for (auto cur_page_addr = (UINT_PTR) base; cur_page_addr < (UINT_PTR) base + size; cur_page_addr = (ULONG_PTR) mem_basic_inf.BaseAddress + mem_basic_inf.RegionSize) {
-        if (NTSTATUS status = ZwQueryVirtualMemory(ZwCurrentProcess(), (PVOID) ((UINT_PTR) cur_page_addr), MemoryBasicInformation, &mem_basic_inf, sizeof(mem_basic_inf), NULL); !NT_SUCCESS(status)) {
+        if (NTSTATUS status = ZwQueryVirtualMemory(ZwCurrentProcess(), (PVOID) ((UINT_PTR) cur_page_addr), MemoryBasicInformation, &mem_basic_inf, sizeof(mem_basic_inf), NULL); 
+			!NT_SUCCESS(status)) {
             return status;
         }
         if (mem_basic_inf.State == MEM_COMMIT && mem_basic_inf.Protect != PAGE_NOACCESS && !(mem_basic_inf.Protect & PAGE_GUARD)) {
@@ -265,11 +202,11 @@ NTSTATUS ListPages(PVOID base, DWORD size,  PAGE* const& pages) {
 NTSTATUS CallbackMODULE(PREQUEST_MODULE args)
 {
 	PEPROCESS process = NULL;
-	NTSTATUS status = (PsLookupProcessByProcessId)((HANDLE)args->ProcessId, &process);
+	NTSTATUS status = PsLookupProcessByProcessId((HANDLE)args->ProcessId, &process);
 	if (NT_SUCCESS(status)) {
 		PVOID base = NULL;
 		DWORD size = 0;
-        PAGE pages[0x20]{};
+        PAGE pages[0x200]{};
         KAPC_STATE apc;
 		(KeStackAttachProcess)(process, &apc);
 
@@ -281,7 +218,7 @@ NTSTATUS CallbackMODULE(PREQUEST_MODULE args)
 
 			if (args->ListPages) {
                 status = ListPages(base, size, pages);
-                print("LIST PAGES");
+                PRINT_TRACE("LIST PAGES");
 			}
 
         } else {
@@ -303,13 +240,16 @@ NTSTATUS CallbackMODULE(PREQUEST_MODULE args)
 
 NTSTATUS CallbackMAINBASE(PREQUEST_MAINBASE args)
 {
-	PEPROCESS pProcess = NULL;
-	if (args->ProcessId == 0)
-		return STATUS_UNSUCCESSFUL;
+    if (args->ProcessId == 0) {
+        return STATUS_UNSUCCESSFUL;
+    }
 
-	NTSTATUS NtRet = PsLookupProcessByProcessId((HANDLE)args->ProcessId, &pProcess);
-	if (NtRet != STATUS_SUCCESS)
-		return STATUS_UNSUCCESSFUL;
+	PEPROCESS pProcess = NULL;
+
+	NTSTATUS status = PsLookupProcessByProcessId((HANDLE)args->ProcessId, &pProcess);
+	if (!NT_SUCCESS(status)) {
+        return status;
+	}
 
 	auto base = PsGetProcessSectionBaseAddress(pProcess);
 	RtlCopyMemory(args->OutAddress, &base, sizeof(base));

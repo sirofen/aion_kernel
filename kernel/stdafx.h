@@ -11,9 +11,9 @@
 #include <ntstrsafe.h>
 
 #include <Utils.h>
+#include <reg_utils.h>
 #include <CallbackHandler.h>
 
 #include <gstruct.h>
 
-#define PRINT_VERBOSE_TRACE
 #include <print.h>

@@ -1,5 +1,6 @@
 #pragma once
-#define RVA(addr, size) (uint64_t)((PBYTE)((UINT_PTR)(addr) + *(PINT)((UINT_PTR)(addr) + ((size) - sizeof(INT))) + (size)))
+#include <print.h>
+#define RVA(addr, size) (uint64_t)((PBYTE) ((UINT_PTR) (addr) + *(PINT) ((UINT_PTR) (addr) + ((size) - sizeof(INT))) + (size)))
 
 //https://ntdiff.github.io/
 #define WINDOWS_1803 17134
@@ -11,50 +12,50 @@
 #define WINDOWS_21H1 20180
 
 typedef struct _PEB_LDR_DATA {
-	ULONG Length;
-	UCHAR Initialized;
-	PVOID SsHandle;
-	LIST_ENTRY InLoadOrderModuleList;
-	LIST_ENTRY InMemoryOrderModuleList;
-	LIST_ENTRY InInitializationOrderModuleList;
-} PEB_LDR_DATA, * PPEB_LDR_DATA;
+    ULONG Length;
+    UCHAR Initialized;
+    PVOID SsHandle;
+    LIST_ENTRY InLoadOrderModuleList;
+    LIST_ENTRY InMemoryOrderModuleList;
+    LIST_ENTRY InInitializationOrderModuleList;
+} PEB_LDR_DATA, *PPEB_LDR_DATA;
 
 typedef struct _PEB {
-	UCHAR InheritedAddressSpace;
-	UCHAR ReadImageFileExecOptions;
-	UCHAR BeingDebugged;
-	UCHAR BitField;
-	PVOID Mutant;
-	PVOID ImageBaseAddress;
-	PPEB_LDR_DATA Ldr;
-	PVOID ProcessParameters;
-	PVOID SubSystemData;
-	PVOID ProcessHeap;
-	PVOID FastPebLock;
-	PVOID AtlThunkSListPtr;
-	PVOID IFEOKey;
-	PVOID CrossProcessFlags;
-	PVOID KernelCallbackTable;
-	ULONG SystemReserved;
-	ULONG AtlThunkSListPtr32;
-	PVOID ApiSetMap;
-} PEB, * PPEB;
+    UCHAR InheritedAddressSpace;
+    UCHAR ReadImageFileExecOptions;
+    UCHAR BeingDebugged;
+    UCHAR BitField;
+    PVOID Mutant;
+    PVOID ImageBaseAddress;
+    PPEB_LDR_DATA Ldr;
+    PVOID ProcessParameters;
+    PVOID SubSystemData;
+    PVOID ProcessHeap;
+    PVOID FastPebLock;
+    PVOID AtlThunkSListPtr;
+    PVOID IFEOKey;
+    PVOID CrossProcessFlags;
+    PVOID KernelCallbackTable;
+    ULONG SystemReserved;
+    ULONG AtlThunkSListPtr32;
+    PVOID ApiSetMap;
+} PEB, *PPEB;
 
 typedef struct _LDR_DATA_TABLE_ENTRY {
-	LIST_ENTRY InLoadOrderLinks;
-	LIST_ENTRY InMemoryOrderLinks;
-	LIST_ENTRY InInitializationOrderLinks;
-	PVOID DllBase;
-	PVOID EntryPoint;
-	ULONG SizeOfImage;
-	UNICODE_STRING FullDllName;
-	UNICODE_STRING BaseDllName;
-	ULONG Flags;
-	USHORT LoadCount;
-	USHORT TlsIndex;
-	LIST_ENTRY HashLinks;
-	ULONG TimeDateStamp;
-} LDR_DATA_TABLE_ENTRY, * PLDR_DATA_TABLE_ENTRY;
+    LIST_ENTRY InLoadOrderLinks;
+    LIST_ENTRY InMemoryOrderLinks;
+    LIST_ENTRY InInitializationOrderLinks;
+    PVOID DllBase;
+    PVOID EntryPoint;
+    ULONG SizeOfImage;
+    UNICODE_STRING FullDllName;
+    UNICODE_STRING BaseDllName;
+    ULONG Flags;
+    USHORT LoadCount;
+    USHORT TlsIndex;
+    LIST_ENTRY HashLinks;
+    ULONG TimeDateStamp;
+} LDR_DATA_TABLE_ENTRY, *PLDR_DATA_TABLE_ENTRY;
 
 typedef struct _LDR_DATA_TABLE_ENTRY32 {
     LIST_ENTRY32 InLoadOrderLinks;
@@ -109,90 +110,87 @@ typedef struct _MODULE_ENTRY {
         : Base(entry->DllBase)
         , Size(entry->SizeOfImage) {}
     _MODULE_ENTRY(const PLDR_DATA_TABLE_ENTRY32& entry)
-        : Base((PVOID)entry->DllBase)
+        : Base((PVOID) entry->DllBase)
         , Size(entry->SizeOfImage) {}
-    } MODULE_ENTRY, *PMODULE_ENTRY;
+} MODULE_ENTRY, *PMODULE_ENTRY;
 
-extern "C" POBJECT_TYPE * IoDriverObjectType;
+extern "C" POBJECT_TYPE* IoDriverObjectType;
 extern "C" {
-	NTSTATUS NTAPI MmCopyVirtualMemory(PEPROCESS SourceProcess, PVOID SourceAddress, PEPROCESS TargetProcess, PVOID TargetAddress, SIZE_T BufferSize, KPROCESSOR_MODE PreviousMode, PSIZE_T ReturnSize);
-	NTSYSAPI NTSTATUS NTAPI ObReferenceObjectByName(PUNICODE_STRING ObjectPath, ULONG Attributes, PACCESS_STATE PassedAccessState, ACCESS_MASK DesiredAccess, POBJECT_TYPE ObjectType, KPROCESSOR_MODE AccessMode, PVOID ParseContext, PVOID* ObjectPtr);
-	NTKERNELAPI PVOID PsGetProcessSectionBaseAddress(PEPROCESS Process);
-	NTKERNELAPI PPEB  NTAPI PsGetProcessPeb(IN PEPROCESS Process);
-    NTKERNELAPI PVOID NTAPI PsGetProcessWow64Process(_In_ PEPROCESS Process);
-	NTSTATUS NTAPI ZwProtectVirtualMemory(HANDLE ProcessHandle, PVOID* BaseAddress, SIZE_T* NumberOfBytesToProtect, ULONG NewAccessProtection, PULONG OldAccessProtection);
+NTSTATUS NTAPI MmCopyVirtualMemory(PEPROCESS SourceProcess, PVOID SourceAddress, PEPROCESS TargetProcess, PVOID TargetAddress, SIZE_T BufferSize, KPROCESSOR_MODE PreviousMode, PSIZE_T ReturnSize);
+NTSYSAPI NTSTATUS NTAPI ObReferenceObjectByName(PUNICODE_STRING ObjectPath, ULONG Attributes, PACCESS_STATE PassedAccessState, ACCESS_MASK DesiredAccess, POBJECT_TYPE ObjectType, KPROCESSOR_MODE AccessMode, PVOID ParseContext, PVOID* ObjectPtr);
+NTKERNELAPI PVOID PsGetProcessSectionBaseAddress(PEPROCESS Process);
+NTKERNELAPI PPEB NTAPI PsGetProcessPeb(IN PEPROCESS Process);
+NTKERNELAPI PVOID NTAPI PsGetProcessWow64Process(_In_ PEPROCESS Process);
+NTSTATUS NTAPI ZwProtectVirtualMemory(HANDLE ProcessHandle, PVOID* BaseAddress, SIZE_T* NumberOfBytesToProtect, ULONG NewAccessProtection, PULONG OldAccessProtection);
 }
 
 namespace Utils {
-	namespace Registry //https://www.unknowncheats.me/forum/3108590-post2.html
-	{
-		ULONG GetKeyInfoSize(HANDLE hKey, PUNICODE_STRING Key);
-		//template <typename type>
-		//type ReadRegistry(UNICODE_STRING RegPath, UNICODE_STRING Key);
-		bool WriteRegistry(UNICODE_STRING RegPath, UNICODE_STRING Key, PVOID Address, ULONG Type, ULONG Size);
-		template<typename type>
-		static type ReadRegistry(UNICODE_STRING RegPath, UNICODE_STRING Key)
-		{
-            //DbgPrintEx(0, 0, __FUNCTION__);
-            //DbgPrintEx(0, 0, __FUNCTION__ "key: %S", Key.Buffer);
-			HANDLE hKey;
-			OBJECT_ATTRIBUTES ObjAttr;
-			NTSTATUS Status = STATUS_UNSUCCESSFUL;
+namespace Registry//https://www.unknowncheats.me/forum/3108590-post2.html
+{
+ULONG GetKeyInfoSize(HANDLE hKey, PUNICODE_STRING Key);
 
-			InitializeObjectAttributes(&ObjAttr, &RegPath, OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE, NULL, NULL);
+bool WriteRegistry(UNICODE_STRING RegPath, UNICODE_STRING Key, PVOID Address, ULONG Type, ULONG Size);
 
-			Status = ZwOpenKey(&hKey, KEY_ALL_ACCESS, &ObjAttr);
+template<typename T>
+static T ReadRegistry(UNICODE_STRING RegPath, UNICODE_STRING Key) {
+    HANDLE hKey;
+    OBJECT_ATTRIBUTES ObjAttr;
+    NTSTATUS Status = STATUS_UNSUCCESSFUL;
 
-			if (NT_SUCCESS(Status))
-			{
-				ULONG KeyInfoSize = GetKeyInfoSize(hKey, &Key);
-				ULONG KeyInfoSizeNeeded;
+    InitializeObjectAttributes(&ObjAttr, &RegPath, OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE, NULL, NULL);
 
-				if (KeyInfoSize == NULL)
-				{
-					ZwClose(hKey);
-					return 0;
-				}
+    Status = ZwOpenKey(&hKey, KEY_ALL_ACCESS, &ObjAttr);
 
-				//DbgPrintEx(0, 0, "KeyInfoSize: %lu\n", KeyInfoSize);
+    if (NT_SUCCESS(Status)) {
+        ULONG KeyInfoSize = GetKeyInfoSize(hKey, &Key);
+        ULONG KeyInfoSizeNeeded;
 
-				PKEY_VALUE_FULL_INFORMATION pKeyInfo = (PKEY_VALUE_FULL_INFORMATION)ExAllocatePool(NonPagedPool, KeyInfoSize);
-				RtlZeroMemory(pKeyInfo, KeyInfoSize);
+        if (KeyInfoSize == NULL) {
+            ZwClose(hKey);
+            return 0;
+        }
 
-				Status = ZwQueryValueKey(hKey, &Key, KeyValueFullInformation, pKeyInfo, KeyInfoSize, &KeyInfoSizeNeeded);
+        PKEY_VALUE_FULL_INFORMATION pKeyInfo = (PKEY_VALUE_FULL_INFORMATION) ExAllocatePool(NonPagedPool, KeyInfoSize);
 
-				if (!NT_SUCCESS(Status) || (KeyInfoSize != KeyInfoSizeNeeded))
-				{
-					ZwClose(hKey);
-					ExFreePoolWithTag(pKeyInfo, 0);
-					return 0;
-				}
-                //DbgPrintEx(0, 0, "ZwQueryValueKey name: %s\n", pKeyInfo->Name);
-				ZwClose(hKey);
-                type _v = *(type*) ((LONG64) pKeyInfo + pKeyInfo->DataOffset);
-                //DbgPrintEx(0, 0, "read reg: %llu\n", _v);
-				ExFreePoolWithTag(pKeyInfo, 0);
-                return _v;
-			}
+        RtlZeroMemory(pKeyInfo, KeyInfoSize);
 
-			return 0;
-		}
-	}
-	//Defaults:
-	//const bool bCheckMask(PCHAR base, PCHAR pattern, PCHAR mask);
-	//const UINT64 FindPattern(const UINT64 dwAddress, const UINT dwLen, const PCHAR bMask, const PCHAR szMask);
-	PMODULE_ENTRY GetModuleByName(PEPROCESS process, PWCHAR moduleName);
-	//Physical Memory:
-	namespace PhysicalMemory { //https://www.unknowncheats.me/forum/anti-cheat-bypass/444289-read-process-physical-memory-attach.html
-		const DWORD GetUserDirectoryTableBaseOffset();
-		const UINT64 GetProcessCr3(const PEPROCESS pProcess);
-		const UINT64 GetKernelDirBase();
-		const UINT64 TranslateLinearAddress(UINT64 directoryTableBase, UINT64 virtualAddress);
-		NTSTATUS ReadVirtual(UINT64 dirbase, UINT64 address, UINT8* buffer, SIZE_T size, SIZE_T* read);
-		NTSTATUS WriteVirtual(UINT64 dirbase, UINT64 address, UINT8* buffer, SIZE_T size, SIZE_T* written);
-		NTSTATUS ReadPhysicalAddress(PVOID TargetAddress, PVOID lpBuffer, SIZE_T Size, SIZE_T* BytesRead);
-		NTSTATUS WritePhysicalAddress(PVOID TargetAddress, PVOID lpBuffer, SIZE_T Size, SIZE_T* BytesWritten);
-	}
-	//Protection:
+        Status = ZwQueryValueKey(hKey, &Key, KeyValueFullInformation, pKeyInfo, KeyInfoSize, &KeyInfoSizeNeeded);
 
+        if (!NT_SUCCESS(Status) || (KeyInfoSize != KeyInfoSizeNeeded)) {
+            ZwClose(hKey);
+            ExFreePoolWithTag(pKeyInfo, 0);
+            return 0;
+        }
+        T _v = *(T*) ((LONG64) pKeyInfo + pKeyInfo->DataOffset);
+
+        ZwClose(hKey);
+        ExFreePoolWithTag(pKeyInfo, 0);
+        return _v;
+    }
+
+    return 0;
 }
+
+}// namespace Registry
+
+PMODULE_ENTRY GetModuleByName(PEPROCESS process, PWCHAR moduleName);
+UINT64 GetProcessImageBase(DWORD process);
+
+void print_bytes(const char* buf, UINT64 sz);
+
+// https://github.com/DarthTon/Blackbone/blob/231f1747161cce6944589c4a748c4d0a71340fbd/src/BlackBoneDrv/Utils.c#L227-L236
+BOOLEAN BBCheckProcessTermination(PEPROCESS pProcess);
+
+namespace PhysicalMemory {//https://www.unknowncheats.me/forum/anti-cheat-bypass/444289-read-process-physical-memory-attach.html
+const DWORD GetUserDirectoryTableBaseOffset();
+const UINT64 GetProcessCr3(const PEPROCESS pProcess);
+const UINT64 GetKernelDirBase();
+const UINT64 TranslateLinearAddress(UINT64 directoryTableBase, UINT64 virtualAddress);
+NTSTATUS ReadVirtual(UINT64 dirbase, UINT64 address, UINT8* buffer, SIZE_T size, SIZE_T* read);
+NTSTATUS WriteVirtual(UINT64 dirbase, UINT64 address, UINT8* buffer, SIZE_T size, SIZE_T* written);
+NTSTATUS ReadPhysicalAddress(PVOID TargetAddress, PVOID lpBuffer, SIZE_T Size, SIZE_T* BytesRead);
+NTSTATUS WritePhysicalAddress(PVOID TargetAddress, PVOID lpBuffer, SIZE_T Size, SIZE_T* BytesWritten);
+}// namespace PhysicalMemory
+ //Protection:
+
+}// namespace Utils

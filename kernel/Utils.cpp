@@ -1,4 +1,12 @@
+#define PRINT_VERBOSE_TRACE
 #include "stdafx.h"
+
+namespace {
+constexpr char hex_ascii_map[] = {
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+        0x38, 0x39, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46
+};
+}
 
 PMODULE_ENTRY Utils::GetModuleByName(PEPROCESS process, PWCHAR moduleName) {
     UNICODE_STRING moduleNameStr = {0};
@@ -47,6 +55,29 @@ PMODULE_ENTRY Utils::GetModuleByName(PEPROCESS process, PWCHAR moduleName) {
         PRINT_ERROR("%s: Exception, Code: 0x%X\n", __FUNCTION__, GetExceptionCode());
     }
     return NULL;
+}
+
+UINT64 Utils::GetProcessImageBase(DWORD process) {
+    if (process == 0) {
+        return 0;
+    }
+
+    PEPROCESS pProcess = NULL;
+
+    NTSTATUS status = PsLookupProcessByProcessId((HANDLE) process, &pProcess);
+    if (!NT_SUCCESS(status)) {
+        return 0;
+    }
+
+    auto base = PsGetProcessSectionBaseAddress(pProcess);
+    ObDereferenceObject(pProcess);
+    return (UINT64) base;
+}
+
+void Utils::print_bytes(const char* buf, UINT64 sz) {
+    for (UINT64 i = 0; i < sz; i++) {
+        PRINT_DEBUG("%c%c", hex_ascii_map[buf[i] >> 4], hex_ascii_map[buf[i] & 0xF]);
+    }
 }
 
 const DWORD Utils::PhysicalMemory::GetUserDirectoryTableBaseOffset()
@@ -221,4 +252,9 @@ bool Utils::Registry::WriteRegistry(UNICODE_STRING RegPath, UNICODE_STRING Key, 
 	}
 
 	return Success;
+}
+
+BOOLEAN Utils::BBCheckProcessTermination(PEPROCESS pProcess) {
+    LARGE_INTEGER zeroTime = {0};
+    return KeWaitForSingleObject(pProcess, Executive, KernelMode, FALSE, &zeroTime) == STATUS_WAIT_0;
 }
